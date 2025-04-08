@@ -1,0 +1,5 @@
+Flask==2.0.3
+flask-dropzone==1.6.0
+exifread==2.3.2
+mysql-connector-python==9.0.0
+Werkzeug==2.0.3

@@ -1,0 +1,13 @@
+.dropzone {
+    border: 2px dashed #0087F7;
+    border-radius: 5px;
+    padding: 20px;
+    width: 100%;
+    height: 200px;
+    text-align: center;
+}
+
+.dropzone .dz-message {
+    font-size: 20px;
+    color: #0087F7;
+}
