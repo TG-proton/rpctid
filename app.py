@@ -17,10 +17,12 @@ app.config['DROPZONE_UPLOAD_URL'] = '/upload'
 dropzone = Dropzone(app)
 
 # MySQL-konfiguration
+import os
+
 db_config = {
-    'user': 'root',  # Ersätt med ditt användarnamn
-    '***REMOVED***': '***REMOVED***',  # Ersätt med ditt lösenord
-    'host': 'db',  # Använd Docker Compose tjänstnamn
+    'user': 'root',
+    '***REMOVED***': os.getenv('MYSQL_PASSWORD'),  # Hämta lösenord från miljövariabel
+    'host': 'db',
     'database': 'photo_uploads'
 }
 
