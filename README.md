@@ -16,8 +16,8 @@ Den här applikationen är en containerbaserad webbapplikation för att ladda up
 
 1. **Kloning av repository**
    ```sh
-   git clone https://github.com/TG-proton/RPC.git
-   cd RPC
+   git clone https://github.com/TG-proton/rpctid.git
+   cd rpctid
    ```
 
 2. **Skapa och starta Docker-containrar**
