@@ -7,7 +7,8 @@ import mysql.connector
 app = Flask(__name__)
 
 # Konfiguration för uppladdningar
-app.config['UPLOADED_PHOTOS_DEST'] = 'uploads'  # Mapp för att spara uppladdade foton
+app.config['UPLOADED_PHOTOS_DEST'] = '/var/www/rpctid/uploads'
+ # Mapp för att spara uppladdade foton
 app.config['DROPZONE_UPLOAD_MULTIPLE'] = True
 app.config['DROPZONE_MAX_FILE_SIZE'] = 25600  # Max filstorlek i KB (25 MB)
 app.config['DROPZONE_ALLOWED_FILE_TYPE'] = 'image'
