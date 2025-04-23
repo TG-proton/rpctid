@@ -4,13 +4,15 @@ services:
   db:
     image: mysql:8.0
     environment:
-      MYSQL_ROOT_PASSWORD: Stella25%moms
+      MYSQL_ROOT_PASSWORD: ${MYSQL_PASSWORD:-defaultpassword}
       MYSQL_DATABASE: photo_uploads
     volumes:
       - db_data:/var/lib/mysql
 
   web:
     build: .
+    environment:
+      MYSQL_PASSWORD: Stella25%moms  # Här anger du lösenordet
     command: flask run --host=0.0.0.0
     volumes:
       - /var/www/rpctid/uploads:/var/www/rpctid/uploads
