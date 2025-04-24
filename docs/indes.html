@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/dropzone/5.9.3/basic.css" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/dropzone/5.9.3/dropzone.css" />
+    <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/dropzone/5.9.3/dropzone.min.js"></script>
+    <title>Fotouppladdning</title>
+    <style>
+        #map {
+            height: 400px;
+            width: 100%;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+        th, td {
+            border: 1px solid #ddd;
+            padding: 8px;
+            text-align: center;
+        }
+        img {
+            width: 100px; /* Justera storleken på miniatyrbilderna */
+            cursor: pointer;
+        }
+    </style>
+</head>
+<body>
+    <div id="map"></div>
+
+    <h1>Ladda upp foton till 98</h1>
+    <form action="/upload" class="dropzone" id="dropzone"></form>
+
+    <table id="uploaded-photos-table">
+        <thead>
+            <tr>
+                <th>Miniatyrbild</th>
+                <th>Filnamn</th>
+                <th>Koordinater</th>
+                <th>Datum</th>
+                <th>Egna anteckningar</th>
+                <th>Radera</th>
+            </tr>
+        </thead>
+        <tbody id="uploaded-photos">
+            <!-- Dynamiska fotodata fylls i här -->
+        </tbody>
+    </table>
+
+    <script>
+        // Initiera Dropzone
+        Dropzone.options.dropzone = {
+            success: function(file, response) {
+                if (response.success) {
+                    location.reload();  // Ladda om sidan efter framgångsrik uppladdning
+                }
+            }
+        };
+
+        // Initiera kartan
+        var map = L.map('map').setView([0, 0], 2);
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            maxZoom: 19,
+            attribution: '© OpenStreetMap'
+        }).addTo(map);
+    </script>
+</body>
+</html>
