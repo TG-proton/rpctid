@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/dropzone/5.9.3/basic.css" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/dropzone/5.9.3/dropzone.css" />
+    <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/dropzone/5.9.3/dropzone.min.js"></script>
+    <title>Fotouppladdning</title>
+    <style>
+        #map {
+            height: 400px;
+            width: 100%;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+        th, td {
+            border: 1px solid #ddd;
+            padding: 8px;
+            text-align: center;
+        }
+        img {
+            width: 100px;
+            cursor: pointer;
+        }
+    </style>
+</head>
+<body>
+    <div id="map"></div>
+
+    <h1>Ladda upp foton</h1>
+    <form action="/upload" class="dropzone" id="dropzone"></form>
+
+    <table id="uploaded-photos-table">
+        <thead>
+            <tr>
+                <th>Miniatyrbild</th>
+                <th>Filnamn</th>
+                <th>Koordinater</th>
+                <th>Datum</th>
+                <th>Egna anteckningar</th>
+                <th>Radera</th>
+            </tr>
+        </thead>
+        <tbody id="uploaded-photos">
+            <!-- Dynamisk data fylls här -->
+        </tbody>
+    </table>
+
+    <script>
+        // JavaScript-kod från ovan steg
+        fetch('https://tid.endre.se:5000/api/photos')
+          .then(response => response.json())
+          .then(data => {
+              const tableBody = document.getElementById('uploaded-photos');
+              tableBody.innerHTML = '';
+              data.forEach(photo => {
+                  const row = `<tr>
+                      <td><img src="/uploads/${photo[0]}" onclick="window.open('/uploads/${photo[0]}');"></td>
+                      <td>${photo[0]}</td>
+                      <td>${photo[1]} ${photo[2]}</td>
+                      <td>${photo[3]}</td>
+                      <td><input type="text" placeholder="Anteckningar" value="${photo[4]}" onchange="updateNotes('${photo[0]}', this.value)"></td>
+                      <td><button onclick="deletePhoto('${photo[0]}')">Radera</button></td>
+                  </tr>`;
+                  tableBody.innerHTML += row;
+              });
+          })
+          .catch(error => console.error('Error fetching data:', error));
+
+        function updateNotes(filename, notes) {
+            fetch(`https://tid.endre.se:5000/update_notes/${filename}`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded',
+                },
+                body: new URLSearchParams({ 'notes': notes })
+            })
+            .then(response => {
+                if (!response.ok) {
+                    alert('Fel vid uppdatering av anteckningar.');
+                }
+            });
+        }
+
+        function deletePhoto(filename) {
+            if (confirm('Är du säker på att du vill radera detta foto?')) {
+                fetch(`https://tid.endre.se:5000/delete/${filename}`, {
+                    method: 'DELETE'
+                })
+                .then(response => {
+                    if (response.ok) {
+                        location.reload();
+                    } else {
+                        alert('Fel vid radering av foto.');
+                    }
+                });
+            }
+        }
+    </script>
+</body>
+</html>
