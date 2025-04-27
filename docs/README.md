@@ -165,3 +165,229 @@ Failed to load resource: net::ERR_SSL_PROTOCOL_ERROR
 admin.html:74 Error fetching data: TypeError: Failed to fetch
     at admin.html:57:9
 (anonymous) @ admin.html:74
+
+
+
+### Åtgärdslista för CORS-problem mellan `tid.endre.se` och `rpctid.endre.se`
+
+#### Problem
+När vi försöker göra en `fetch`-begäran från `https://rpctid.endre.se` till API:et på `https://tid.endre.se/api/photos`, blockeras detta av webbläsarens CORS-policy. Detta beror på att servern på `tid.endre.se` returnerar felaktiga CORS-headerar, specifikt:
+
+- Headern `Access-Control-Allow-Origin` innehåller flera värden (`https://rpctid.endre.se, https://rpctid.endre.se`), vilket bryter mot CORS-specifikationen.
+- Detta leder till att webbläsaren inte tillåter begäran och ger följande felmeddelande i konsolen:
+
+```
+Access to fetch at 'https://tid.endre.se/api/photos' from origin 'https://rpctid.endre.se' has been blocked by CORS policy: The 'Access-Control-Allow-Origin' header contains multiple values 'https://rpctid.endre.se, https://rpctid.endre.se', but only one is allowed.
+```
+
+#### Åtgärder
+1. **Uppdatera servern på `tid.endre.se`**:
+   - Se till att servern returnerar en korrekt och enkel `Access-Control-Allow-Origin`-header. Exempel:
+     ```
+     Access-Control-Allow-Origin: https://rpctid.endre.se
+     ```
+   - Undvik att inkludera flera värden i headern.
+
+2. **Testa och verifiera lösningen**:
+   - Efter att servern har uppdaterats, testa om `fetch`-begäran från `https://rpctid.endre.se` fungerar utan fel.
+   - Verifiera i webbläsarkonsolen att inga CORS-relaterade fel längre visas.
+
+3. **Dokumentera serverkonfigurationen**:
+   - Lägg till dokumentation om hur CORS är konfigurerat för API:et i denna README-fil eller i utvecklingsdokumentationen.
+   - Detta förhindrar att liknande problem uppstår i framtiden.
+
+4. **Alternativ tillfällig lösning** (ej rekommenderad för produktionsmiljöer):
+   - Om problemet kvarstår och en omedelbar fix krävs, kan `mode: 'no-cors'` användas i `fetch`-begäran. Detta begränsar dock åtkomsten till svarsinnehållet och bör undvikas i produktionskod.
+
+#### Status
+- Problemet är identifierat och en lösning på servernivå krävs.
+- Ingen aktiv fix på klientens sida rekommenderas för närvarande.
+
+---
+
+Denna lista kan uppdateras när nya insikter eller lösningar tillkommer.
+
+
+
+
+### Lösning: Hantera CORS i Flask
+
+#### Problembeskrivning
+När vi försöker göra en `fetch`-begäran från `https://rpctid.endre.se` till API:et på `https://tid.endre.se/api/photos`, uppstår ett CORS-fel eftersom både Flask och Nginx försöker sätta `Access-Control-Allow-Origin`-headern. Detta resulterar i en konflikt där webbläsaren avvisar begäran.
+
+#### Vald lösning
+Vi har beslutat att hantera all CORS-hantering i Flask och ta bort CORS-relaterade headers från Nginx-konfigurationen.
+
+#### Genomförande
+1. **Uppdatera Nginx-konfiguration:**
+   Öppna filen `nginx/tid.endre.se` och ta bort följande rader från `/api/`-sektionen:
+   ```nginx
+   add_header Access-Control-Allow-Origin "https://rpctid.endre.se";
+   add_header Access-Control-Allow-Methods "GET, POST, OPTIONS";
+   add_header Access-Control-Allow-Headers "Authorization, Content-Type";
+   ```
+
+2. **Ladda om Nginx:**
+   Efter att ha sparat ändringarna, kör följande kommandon för att testa och ladda om Nginx-konfigurationen:
+   ```bash
+   sudo nginx -t
+   sudo systemctl reload nginx
+   ```
+
+3. **Verifiera Flask-konfiguration:**
+   Flask är redan konfigurerad att hantera CORS via `flask_cors`. Följande rad i `app.py` säkerställer att endast förfrågningar från `https://rpctid.endre.se` tillåts:
+   ```python
+   CORS(app, resources={r"/api/*": {"origins": "https://rpctid.endre.se"}})
+   ```
+
+4. **Testa API:et:**
+   Kör följande kommando för att testa att CORS fungerar korrekt:
+   ```bash
+   curl -i -X OPTIONS https://tid.endre.se/api/photos -H "Origin: https://rpctid.endre.se"
+   ```
+   Kontrollera att endast en `Access-Control-Allow-Origin`-header returneras.
+
+5. **Testa frontend-klienten:**
+   Ladda om sidan på `https://rpctid.endre.se/admin.html` och verifiera att inga CORS-fel visas i webbläsarkonsolen.
+
+#### Förväntat resultat
+API-förfrågningar från `https://rpctid.endre.se` till `https://tid.endre.se` bör fungera utan problem, och inga `Access-Control-Allow-Origin`-konflikter bör uppstå.
+
+#### Dokumentation
+Alla ändringar har dokumenterats i detta `README.md`-avsnitt för framtida referens.
+### TEST
+admindeb@exif:~$ curl -i -X OPTIONS https://tid.endre.se/api/photos -H "Origin: https://rpctid.endre.se"
+HTTP/1.1 204 No Content
+Server: nginx/1.18.0 (Ubuntu)
+Date: Sun, 27 Apr 2025 20:43:39 GMT
+Connection: keep-alive
+Access-Control-Allow-Origin: https://rpctid.endre.se
+Access-Control-Allow-Methods: GET, POST, OPTIONS
+Access-Control-Allow-Headers: Authorization, Content-Type
+
+Opera:
+
+Access to fetch at 'https://tid.endre.se/api/photos' from origin 'https://rpctid.endre.se' has been blocked by CORS policy: The 'Access-Control-Allow-Origin' header contains multiple values 'https://rpctid.endre.se, https://rpctid.endre.se', but only one is allowed. Have the server send the header with a valid value, or, if an opaque response serves your needs, set the request's mode to 'no-cors' to fetch the resource with CORS disabled.
+admin.html:57          GET https://tid.endre.se/api/photos net::ERR_FAILED 200 (OK)
+(anonymous) @ admin.html:57
+admin.html:74 Error fetching data: TypeError: Failed to fetch
+    at admin.html:57:9
+
+## CORS Problem och Lösning
+
+### Problem
+När vi försökte göra API-anrop från frontend (`https://rpctid.endre.se`) till backend (`https://tid.endre.se/api/`), stötte vi på följande problem:
+
+1. **CORS-fel**:
+   - Webbläsaren blockerade API-anrop eftersom `Access-Control-Allow-Origin`-headern innehöll dubbla värden. Detta orsakades av att både Nginx och Flask hanterade CORS-relaterade headers.
+
+2. **Begränsad funktionalitet**:
+   - Efter att ha löst CORS-problemet märkte vi att API:et endast returnerade textdata från MySQL, vilket innebär:
+     - Inga miniatyrbilder visas.
+     - Kartan fungerar inte.
+     - Det är inte möjligt att ladda upp filer från frontend.
+
+---
+
+### Lösning
+
+#### 1. CORS-fel
+För att lösa problemet med dubbla `Access-Control-Allow-Origin`-headers flyttade vi all hantering av CORS till Flask. Följande steg implementerades:
+
+1. **Uppdatering av Nginx-konfiguration**:
+   Vi tog bort alla `add_header`-instruktioner för CORS från Nginx och lät Flask hantera detta. Här är den slutliga konfigurationen för `tid.endre.se`:
+
+   ```nginx name=nginx/tid.endre.se
+   server {
+       listen 80;
+       server_name tid.endre.se;
+
+       # Omdirigera alla HTTP-förfrågningar till HTTPS
+       return 301 https://$host$request_uri;
+   }
+
+   server {
+       listen 443 ssl;
+       server_name tid.endre.se;
+
+       # SSL-certifikat (Certbot eller annat verktyg)
+       ssl_certificate /etc/letsencrypt/live/tid.endre.se/fullchain.pem;
+       ssl_certificate_key /etc/letsencrypt/live/tid.endre.se/privkey.pem;
+
+       # Proxy till Flask-backend
+       location /api/ {
+           proxy_pass http://127.0.0.1:5000;  # Flask kör på port 5000
+           proxy_set_header Host $host;
+           proxy_set_header X-Real-IP $remote_addr;
+           proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+           proxy_set_header X-Forwarded-Proto $scheme;
+
+           # Hantera preflight OPTIONS utan att lägga till CORS-headers
+           if ($request_method = OPTIONS) {
+               return 204;
+           }
+       }
+
+       # Standardinställningar för statiska filer (om nödvändigt)
+       location / {
+           root /var/www/html;  # Byt ut detta om nödvändigt
+           index index.html;
+       }
+   }
+   ```
+
+2. **Flask-konfiguration för CORS**:
+   Vi säkerställde att Flask hanterar alla CORS-relaterade headers med hjälp av biblioteket `flask_cors`. Följande kod lades till i `app.py`:
+
+   ```python name=app.py
+   from flask_cors import CORS
+   CORS(app, resources={r"/api/*": {"origins": "https://rpctid.endre.se"}})
+   ```
+
+---
+
+#### 2. Begränsad funktionalitet
+
+**Problemen som kvarstår:**
+- API:et returnerar endast textdata från MySQL och saknar stöd för:
+  - Generering och visning av miniatyrbilder.
+  - Kartvy (t.ex. med koordinater från databasen).
+  - Filuppladdning via frontend.
+
+---
+
+### Nästa steg
+För att lösa dessa problem krävs följande:
+
+1. **Miniatyrbilder**:
+   - Backend måste generera miniatyrbilder baserat på de uppladdade filerna.
+   - Kontrollera att frontend kan hämta och visa dessa via API:et.
+
+2. **Karta**:
+   - Implementera en funktion i frontend som visualiserar koordinater (exempelvis med Google Maps eller Leaflet.js).
+   - Backend bör returnera koordinatdata i ett format som frontend kan använda.
+
+3. **Filuppladdning**:
+   - Kontrollera att backend kan ta emot och spara filer som laddas upp via frontend.
+   - Säkerställ att API:et returnerar korrekta svar vid filuppladdning (t.ex. statuskod och fil-URL).
+
+---
+
+### Testning
+Testa följande scenarier för att säkerställa att allt fungerar:
+
+1. **API-anrop för visning av data**:
+   - Kontrollera att API:et returnerar fullständig data inklusive miniatyrbilder och koordinater.
+
+2. **Karta**:
+   - Verifiera att kartan visas korrekt med markerade positioner baserat på koordinater.
+
+3. **Filuppladdning**:
+   - Testa att ladda upp filer via frontend och kontrollera att de sparas korrekt i backend.
+
+---
+
+### Slutsats
+Genom att lösa CORS-problemet har vi möjliggjort API-kommunikation mellan backend och frontend. Nästa steg är att implementera stöd för miniatyrbilder, karta och filuppladdning för att fullborda applikationens funktionalitet.
+
+
