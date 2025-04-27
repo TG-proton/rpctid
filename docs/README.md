@@ -206,3 +206,52 @@ Access to fetch at 'https://tid.endre.se/api/photos' from origin 'https://rpctid
 ---
 
 Denna lista kan uppdateras när nya insikter eller lösningar tillkommer.
+
+
+
+
+### Lösning: Hantera CORS i Flask
+
+#### Problembeskrivning
+När vi försöker göra en `fetch`-begäran från `https://rpctid.endre.se` till API:et på `https://tid.endre.se/api/photos`, uppstår ett CORS-fel eftersom både Flask och Nginx försöker sätta `Access-Control-Allow-Origin`-headern. Detta resulterar i en konflikt där webbläsaren avvisar begäran.
+
+#### Vald lösning
+Vi har beslutat att hantera all CORS-hantering i Flask och ta bort CORS-relaterade headers från Nginx-konfigurationen.
+
+#### Genomförande
+1. **Uppdatera Nginx-konfiguration:**
+   Öppna filen `nginx/tid.endre.se` och ta bort följande rader från `/api/`-sektionen:
+   ```nginx
+   add_header Access-Control-Allow-Origin "https://rpctid.endre.se";
+   add_header Access-Control-Allow-Methods "GET, POST, OPTIONS";
+   add_header Access-Control-Allow-Headers "Authorization, Content-Type";
+   ```
+
+2. **Ladda om Nginx:**
+   Efter att ha sparat ändringarna, kör följande kommandon för att testa och ladda om Nginx-konfigurationen:
+   ```bash
+   sudo nginx -t
+   sudo systemctl reload nginx
+   ```
+
+3. **Verifiera Flask-konfiguration:**
+   Flask är redan konfigurerad att hantera CORS via `flask_cors`. Följande rad i `app.py` säkerställer att endast förfrågningar från `https://rpctid.endre.se` tillåts:
+   ```python
+   CORS(app, resources={r"/api/*": {"origins": "https://rpctid.endre.se"}})
+   ```
+
+4. **Testa API:et:**
+   Kör följande kommando för att testa att CORS fungerar korrekt:
+   ```bash
+   curl -i -X OPTIONS https://tid.endre.se/api/photos -H "Origin: https://rpctid.endre.se"
+   ```
+   Kontrollera att endast en `Access-Control-Allow-Origin`-header returneras.
+
+5. **Testa frontend-klienten:**
+   Ladda om sidan på `https://rpctid.endre.se/admin.html` och verifiera att inga CORS-fel visas i webbläsarkonsolen.
+
+#### Förväntat resultat
+API-förfrågningar från `https://rpctid.endre.se` till `https://tid.endre.se` bör fungera utan problem, och inga `Access-Control-Allow-Origin`-konflikter bör uppstå.
+
+#### Dokumentation
+Alla ändringar har dokumenterats i detta `README.md`-avsnitt för framtida referens.
