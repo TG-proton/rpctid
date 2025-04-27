@@ -25,18 +25,32 @@ sudo cp requirements.txt /var/www/rpctid/app/
 
 sudo cp /etc/nginx/sites-available/tid.endre.se /var/www/rpctid/nginx/
 sudo cp /var/log/nginx/error.log /var/www/rpctid/logs/
-sudo cp /sökväg/till/din/flask/flask-error.log /var/www/rpctid/logs/
+
+### Flask-loggar
+Flask-loggar visas korrekt i terminalen men sparas inte alltid till fil.
+docker ps:
+CONTAINER ID   IMAGE        COMMAND                  CREATED        STATUS        PORTS                                         NAMES
+2aa35849915c   rpctid-web   "flask run --host=0.…"   18 hours ago   Up 4 hours    0.0.0.0:5000->5000/tcp, [::]:5000->5000/tcp   rpctid-web-1
+08233cee3025   mysql:8.0    "docker-entrypoint.s…"   18 hours ago   Up 18 hours   3306/tcp, 33060/tcp                           rpctid-db-1
+
+#### Lösning
+För att skapa ny loggfil:
+sudo docker logs rpctid-web-1 > /var/www/rpctid/logs/flask-error.log 2>&1
 
 2. Publicera filerna till GitHub-repot.
- "initiera ett Git-repo:" Jag har redan ett repo som nedan:
+ # "initiera ett Git-repo:" Jag har redan ett repo som nedan:
  # cd /var/www/rpctid
  # sudo git init
  # sudo git remote add origin https://github.com/TG-proton/rpctid.git
- 
+
+cd /var/www/rpctid
 sudo git add .
 sudo git commit -m "Initial struktur och dokumentation för CORS-felsökning"
 sudo git branch -M main
 sudo git push -u origin main
+eller
+sudo git push -u origin main --force
+sudo git pull origin main --rebase
 
 
 3. Felsöka Flask och Nginx för CORS-problemet.
@@ -74,3 +88,80 @@ admin.html:57          GET https://tid.endre.se/api/photos net::ERR_FAILED 404 (
 admin.html:74 Error fetching data: TypeError: Failed to fetch
     at admin.html:57:9
     at admin.html:57:9
+
+
+### Test 3: Frontend-anrop
+admindeb@exif:~$ curl -i http://tid.endre.se:5000/api/photos
+HTTP/1.0 200 OK
+Content-Type: application/json
+Content-Length: 81
+Access-Control-Allow-Origin: https://rpctid.endre.se
+Server: Werkzeug/2.0.3 Python/3.9.22
+Date: Sun, 27 Apr 2025 18:04:32 GMT
+
+[["testfil.jpg","57.74060997","14.00190897","Thu, 05 Sep 2024 17:20:55 GMT",""]]
+admindeb@exif:~$ 
+
+
+### Copilot said: Tack för den senaste uppdateringen! 
+
+Den visaratt Flask-applikationen fungerar korrekt på port 5000 och returnerar ett giltigt svar för endpointen /api/photos. Dessutom skickar Flask rätt CORS-header: Access-Control-Allow-Origin: https://rpctid.endre.se.
+
+Problemet verkar nu ligga i Nginx-konfigurationen, som inte vidarebefordrar förfrågningar korrekt från https://tid.endre.se/api/photos till Flask-applikationen på http://127.0.0.1:5000/api/photos.
+Sammanfattning av situationen
+
+    Flask fungerar som det ska:
+        När du gör en direktförfrågan till Flask (http://tid.endre.se:5000/api/photos), returneras ett korrekt svar.
+        Flask inkluderar korrekt CORS-header.
+
+    Nginx vidarebefordrar inte korrekt:
+        När du anropar via https://tid.endre.se/api/photos, returneras en 404 Not Found.
+        Detta tyder på att Nginx inte skickar förfrågningarna vidare till Flask-applikationen.
+
+### Problem med API-vidarebefordran via Nginx
+#### Symptom:
+- API-anrop till `https://tid.endre.se/api/photos` resulterade i en `404 Not Found`.
+- Direkta anrop till Flask via `http://tid.endre.se:5000/api/photos` fungerade korrekt.
+
+#### Orsak:
+- Nginx-konfigurationen för `proxy_pass` innehöll ett avslutande `/`, vilket orsakade att vidarebefordran inte fungerade som förväntat.
+
+#### Lösning:
+- Ändrade `proxy_pass` i Nginx-konfigurationen:
+  ```nginx
+  proxy_pass http://127.0.0.1:5000;
+  ```
+- Laddade om Nginx-konfigurationen:
+  ```bash
+  sudo nginx -t
+  sudo systemctl reload nginx
+  ```
+
+#### Resultat:
+- API-anrop via Nginx fungerar korrekt och returnerar data med nödvändiga CORS-headers.
+
+admindeb@exif:~$ curl -i https://tid.endre.se/api/photos
+HTTP/1.1 200 OK
+Server: nginx/1.18.0 (Ubuntu)
+Date: Sun, 27 Apr 2025 18:12:05 GMT
+Content-Type: application/json
+Content-Length: 81
+Connection: keep-alive
+Access-Control-Allow-Origin: https://rpctid.endre.se
+Access-Control-Allow-Origin: https://rpctid.endre.se
+Access-Control-Allow-Methods: GET, POST, OPTIONS
+Access-Control-Allow-Headers: Authorization, Content-Type
+
+[["testfil.jpg","57.74060997","14.00190897","Thu, 05 Sep 2024 17:20:55 GMT",""]]
+admindeb@exif:~$ 
+
+- API anrop till https://tid.endre.se/api/photos fungerar.
+
+### Test 4: Det huvudsakliga problemet: Ej fungerande klient 
+
+https://rpctid.endre.se/admin.html visar ej API data från server https://tid.endre.se(api/photos
+
+Failed to load resource: net::ERR_SSL_PROTOCOL_ERROR
+admin.html:74 Error fetching data: TypeError: Failed to fetch
+    at admin.html:57:9
+(anonymous) @ admin.html:74
