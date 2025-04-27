@@ -165,3 +165,44 @@ Failed to load resource: net::ERR_SSL_PROTOCOL_ERROR
 admin.html:74 Error fetching data: TypeError: Failed to fetch
     at admin.html:57:9
 (anonymous) @ admin.html:74
+
+
+
+### Åtgärdslista för CORS-problem mellan `tid.endre.se` och `rpctid.endre.se`
+
+#### Problem
+När vi försöker göra en `fetch`-begäran från `https://rpctid.endre.se` till API:et på `https://tid.endre.se/api/photos`, blockeras detta av webbläsarens CORS-policy. Detta beror på att servern på `tid.endre.se` returnerar felaktiga CORS-headerar, specifikt:
+
+- Headern `Access-Control-Allow-Origin` innehåller flera värden (`https://rpctid.endre.se, https://rpctid.endre.se`), vilket bryter mot CORS-specifikationen.
+- Detta leder till att webbläsaren inte tillåter begäran och ger följande felmeddelande i konsolen:
+
+```
+Access to fetch at 'https://tid.endre.se/api/photos' from origin 'https://rpctid.endre.se' has been blocked by CORS policy: The 'Access-Control-Allow-Origin' header contains multiple values 'https://rpctid.endre.se, https://rpctid.endre.se', but only one is allowed.
+```
+
+#### Åtgärder
+1. **Uppdatera servern på `tid.endre.se`**:
+   - Se till att servern returnerar en korrekt och enkel `Access-Control-Allow-Origin`-header. Exempel:
+     ```
+     Access-Control-Allow-Origin: https://rpctid.endre.se
+     ```
+   - Undvik att inkludera flera värden i headern.
+
+2. **Testa och verifiera lösningen**:
+   - Efter att servern har uppdaterats, testa om `fetch`-begäran från `https://rpctid.endre.se` fungerar utan fel.
+   - Verifiera i webbläsarkonsolen att inga CORS-relaterade fel längre visas.
+
+3. **Dokumentera serverkonfigurationen**:
+   - Lägg till dokumentation om hur CORS är konfigurerat för API:et i denna README-fil eller i utvecklingsdokumentationen.
+   - Detta förhindrar att liknande problem uppstår i framtiden.
+
+4. **Alternativ tillfällig lösning** (ej rekommenderad för produktionsmiljöer):
+   - Om problemet kvarstår och en omedelbar fix krävs, kan `mode: 'no-cors'` användas i `fetch`-begäran. Detta begränsar dock åtkomsten till svarsinnehållet och bör undvikas i produktionskod.
+
+#### Status
+- Problemet är identifierat och en lösning på servernivå krävs.
+- Ingen aktiv fix på klientens sida rekommenderas för närvarande.
+
+---
+
+Denna lista kan uppdateras när nya insikter eller lösningar tillkommer.
