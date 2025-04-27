@@ -7,7 +7,7 @@ import mysql.connector
 app = Flask(__name__)
 
 # Lägg till CORS-konfiguration (anpassa om nödvändigt)
-CORS(app)
+CORS(app, resources={r"/api/*": {"origins": "https://rpctid.endre.se"}})
 
 # Konfiguration för uppladdningar
 app.config['UPLOADED_PHOTOS_DEST'] = '/var/www/rpctid/uploads'  # Mapp för att spara uppladdade foton
@@ -26,12 +26,16 @@ db_config = {
 
 @app.route('/')
 def index():
-    conn = mysql.connector.connect(**db_config)
-    cursor = conn.cursor()
-    cursor.execute("SELECT filename, latitude, longitude, date_taken, notes FROM photos")
-    photos = cursor.fetchall()
-    cursor.close()
-    conn.close()
+    try:
+        conn = mysql.connector.connect(**db_config)
+        cursor = conn.cursor()
+        cursor.execute("SELECT filename, latitude, longitude, date_taken, notes FROM photos")
+        photos = cursor.fetchall()
+    except mysql.connector.Error as err:
+        return jsonify({"error": str(err)}), 500
+    finally:
+        cursor.close()
+        conn.close()
 
     return render_template('index.html', photos=photos)
 
@@ -69,9 +73,9 @@ def upload_photos():
                                 (lon_values[2].num / lon_values[2].den) / 3600
 
                     # Kontrollera referenser för negativa koordinater
-                    if 'GPS GPSLatitudeRef' in tags and tags['GPS GPSLatitudeRef'].values != 'N':
+                    if tags.get('GPS GPSLatitudeRef', 'N').values != 'N':
                         latitude = -latitude
-                    if 'GPS GPSLongitudeRef' in tags and tags['GPS GPSLongitudeRef'].values != 'E':
+                    if tags.get('GPS GPSLongitudeRef', 'E').values != 'E':
                         longitude = -longitude
 
                 # Hämta datum om det finns
@@ -79,8 +83,7 @@ def upload_photos():
                     date_taken = str(tags['EXIF DateTimeOriginal'])
 
         except Exception as e:
-            # Logga fel men fortsätt använda defaultvärden
-            print(f"Fel vid läsning av EXIF-data: {e}")
+            print(f"Fel vid läsning av EXIF-data: {e}")  # Logga felet men fortsätt
 
         # Spara information i databasen
         try:
@@ -91,10 +94,11 @@ def upload_photos():
                 (file.filename, latitude, longitude, date_taken, '')  # Tomma anteckningar vid uppladdning
             )
             conn.commit()
+        except mysql.connector.Error as e:
+            return jsonify({'error': f'Fel vid insättning i databasen: {e}'}), 500
+        finally:
             cursor.close()
             conn.close()
-        except Exception as e:
-            return jsonify({'error': f'Fel vid insättning i databasen: {e}'}), 500
 
     return jsonify({'success': True}), 200
 
@@ -105,12 +109,13 @@ def get_photos():
         cursor = conn.cursor()
         cursor.execute("SELECT filename, latitude, longitude, date_taken, notes FROM photos")
         photos = cursor.fetchall()
+    except mysql.connector.Error as err:
+        return jsonify({"error": str(err)}), 500
+    finally:
         cursor.close()
         conn.close()
 
-        return jsonify(photos)
-    except mysql.connector.Error as err:
-        return jsonify({"error": str(err)}), 500
+    return jsonify(photos)
 
 @app.route('/uploads/<filename>')
 def uploaded_file(filename):
@@ -122,12 +127,16 @@ def delete_photo(filename):
     if os.path.exists(filepath):
         os.remove(filepath)
 
-    conn = mysql.connector.connect(**db_config)
-    cursor = conn.cursor()
-    cursor.execute("DELETE FROM photos WHERE filename = %s", (filename,))
-    conn.commit()
-    cursor.close()
-    conn.close()
+    try:
+        conn = mysql.connector.connect(**db_config)
+        cursor = conn.cursor()
+        cursor.execute("DELETE FROM photos WHERE filename = %s", (filename,))
+        conn.commit()
+    except mysql.connector.Error as e:
+        return jsonify({'error': f'Fel vid radering i databasen: {e}'}), 500
+    finally:
+        cursor.close()
+        conn.close()
 
     return jsonify({'message': 'Foto raderat'}), 200
 
@@ -135,14 +144,22 @@ def delete_photo(filename):
 def update_notes(filename):
     notes = request.form.get('notes')
 
-    conn = mysql.connector.connect(**db_config)
-    cursor = conn.cursor()
-    cursor.execute("UPDATE photos SET notes = %s WHERE filename = %s", (notes, filename))
-    conn.commit()
-    cursor.close()
-    conn.close()
+    try:
+        conn = mysql.connector.connect(**db_config)
+        cursor = conn.cursor()
+        cursor.execute("UPDATE photos SET notes = %s WHERE filename = %s", (notes, filename))
+        conn.commit()
+    except mysql.connector.Error as e:
+        return jsonify({'error': f'Fel vid uppdatering av anteckningar: {e}'}), 500
+    finally:
+        cursor.close()
+        conn.close()
 
     return jsonify({'message': 'Anteckningar uppdaterade'}), 200
+
+@app.route('/api/test', methods=['GET'])
+def test_api():
+    return jsonify({"message": "Test API fungerar!"})
 
 if __name__ == '__main__':
     if not os.path.exists(app.config['UPLOADED_PHOTOS_DEST']):
