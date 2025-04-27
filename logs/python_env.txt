@@ -1,0 +1,1 @@
+SUDO_COMMAND=/usr/bin/bash -c env | grep -i python > logs/python_env.txt

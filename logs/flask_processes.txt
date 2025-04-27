@@ -1,0 +1,5 @@
+root        1876  0.0  0.5 344460 19912 ?        Ss   apr27   0:03 /usr/local/bin/python3.9 /usr/local/bin/flask run --host=0.0.0.0
+root       62537  0.0  0.1   8520  5248 pts/0    S+   00:12   0:00 sudo bash -c ps aux | grep -i flask > logs/flask_processes.txt
+root       62540  0.0  0.0   8520  2296 pts/1    Ss   00:12   0:00 sudo bash -c ps aux | grep -i flask > logs/flask_processes.txt
+root       62541  0.0  0.0   7376  3328 pts/1    S+   00:12   0:00 bash -c ps aux | grep -i flask > logs/flask_processes.txt
+root       62545  0.0  0.0   6636  2560 pts/1    S+   00:12   0:00 grep -i flask

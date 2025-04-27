@@ -1,0 +1,3 @@
+CONTAINER ID   IMAGE        COMMAND                  CREATED        STATUS       PORTS                                         NAMES
+2aa35849915c   rpctid-web   "flask run --host=0.…"   24 hours ago   Up 2 hours   0.0.0.0:5000->5000/tcp, [::]:5000->5000/tcp   rpctid-web-1
+08233cee3025   mysql:8.0    "docker-entrypoint.s…"   24 hours ago   Up 2 hours   3306/tcp, 33060/tcp                           rpctid-db-1
