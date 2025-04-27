@@ -391,3 +391,128 @@ Testa följande scenarier för att säkerställa att allt fungerar:
 Genom att lösa CORS-problemet har vi möjliggjort API-kommunikation mellan backend och frontend. Nästa steg är att implementera stöd för miniatyrbilder, karta och filuppladdning för att fullborda applikationens funktionalitet.
 
 
+
+
+
+Nedanstående dokumentation är beskrivning samt metod för felsökning:
+
+
+# RPC TID - Diagnostikverktyg och Felsökning
+
+Current Date and Time (UTC): 2025-04-27 22:30:07
+Current User's Login: TG-proton
+
+## Beskrivning
+
+Detta dokument beskriver processen för att samla in diagnostikfiler från en server för att underlätta felsökning av webblösningen. Dokumentationen är särskilt utformad för att hjälpa AI-assistenter att förstå systemkonfigurationen och identifiera problem utan att förlora kontext i chattkonversationer.
+
+## Repots struktur
+
+/var/www/rpctid/
+├── app/        # Flask-applikationens kod
+├── nginx/      # Nginx-konfigurationsfiler
+├── logs/       # Loggfiler för felsökning
+├── docs/       # Dokumentation och README.md
+└── tests/      # Tester för Flask-applikationen
+
+## Steg för att samla in diagnostikfiler
+
+Följ dessa kommandon för att samla in alla nödvändiga filer för diagnostik och felsökning:
+
+### 1. Säkerställ att du är i korrekt katalog
+cd /var/www/rpctid/
+
+### 2. Samla in Nginx-konfigurationer
+sudo cp /etc/nginx/sites-available/tid.endre.se nginx/
+sudo cp /etc/nginx/nginx.conf nginx/
+
+### 3. Samla in systemloggar
+sudo cp /var/log/nginx/error.log logs/nginx_error.log
+sudo cp /var/log/nginx/access.log logs/nginx_access.log
+sudo bash -c "tail -n 200 /var/log/syslog > logs/syslog_tail.log"
+
+### 4. Samla in Flask-applikationens loggar
+# Om loggarna finns i /var/www/rpctid/logs/, kan du hoppa över detta steg
+sudo bash -c "journalctl -u rpctid.service --no-pager -n 200 > logs/rpctid_service.log"
+
+### 5. Samla in systeminformation
+sudo bash -c "uname -a > logs/system_info.txt"
+sudo bash -c "systemctl status rpctid.service > logs/rpctid_status.txt 2>&1"
+sudo bash -c "ps aux | grep -i flask > logs/flask_processes.txt"
+sudo bash -c "netstat -tulpn | grep -i python > logs/flask_ports.txt"
+
+### 6. Samla in Python-miljöinformation
+sudo bash -c "which python3 > logs/python_path.txt"
+sudo bash -c "python3 --version > logs/python_version.txt"
+sudo bash -c "pip3 freeze > logs/pip_packages.txt"
+sudo bash -c "env | grep -i python > logs/python_env.txt"
+
+### 7. Samla in Docker-information (om tillämpligt)
+sudo bash -c "docker ps > logs/docker_ps.txt"
+sudo bash -c "docker images > logs/docker_images.txt"
+
+### 8. Fixa behörigheter och pusha till GitHub
+# Ändra ägare så du kan uppdatera repot
+sudo chown -R admindeb:admindeb .
+
+# Lägg till ändringarna i git
+git add .
+git commit -m "Lägg till systemkonfiguration och loggfiler för felsökning"
+git push origin main
+
+## Förklaring av filernas syfte
+
+- nginx/tid.endre.se: Site-specifik Nginx-konfiguration som definierar hur webbservern hanterar din Flask-applikation
+- nginx/nginx.conf: Huvudkonfigurationen för Nginx-servern
+- logs/nginx_error.log: Felmeddelanden från Nginx
+- logs/nginx_access.log: Förfrågningar till Nginx
+- logs/flask-error.log: Felmeddelanden från Flask-applikationen
+- logs/system_info.txt: Grundläggande systemdata
+- logs/rpctid_status.txt: Status för Flask-applikationens systemtjänst
+- logs/docker_ps.txt: Aktiva Docker-containrar
+- logs/docker_images.txt: Installerade Docker-images
+
+## Vanliga problem och lösningar
+
+### Problem 1: Flask-applikationen startar inte
+Kontrollera:
+- logs/rpctid_status.txt för systemtjänstens status
+- logs/flask-error.log för specifika Python-fel
+- logs/pip_packages.txt för att verifiera att alla beroenden är installerade
+
+### Problem 2: Nginx visar 502 Bad Gateway
+Kontrollera:
+- Att Flask-applikationen körs (logs/flask_processes.txt)
+- Att socket/port-konfigurationen stämmer överens mellan Nginx och Flask
+- logs/nginx_error.log för detaljer
+
+### Problem 3: Statiska filer laddas inte
+Kontrollera:
+- Att sökvägar i Nginx-konfigurationen är korrekta
+- Att filbehörigheter är rätt inställda
+- Att statiska kataloger existerar och innehåller filerna
+
+## Återställning av systemet
+
+Om felsökning resulterar i ändringar som måste återställas:
+
+# För att återställa Nginx-konfigurationerna:
+sudo cp nginx/tid.endre.se /etc/nginx/sites-available/
+sudo cp nginx/nginx.conf /etc/nginx/
+sudo systemctl restart nginx
+
+# För att återställa applikationen:
+# (Specifika steg beror på implementationen)
+sudo systemctl restart rpctid.service  # Om det är en systemd-tjänst
+# ELLER
+cd /var/www/rpctid && docker-compose up -d  # Om Docker används
+
+---
+
+Senast uppdaterad: 2025-04-27
+
+
+
+
+
+
