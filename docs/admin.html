@@ -1,354 +1,334 @@
 <!DOCTYPE html>
 <html lang="sv">
-
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>RPC-Tid Admin</title>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.7.1/dist/leaflet.css" />
     <style>
         body {
             font-family: Arial, sans-serif;
-            line-height: 1.6;
             margin: 0;
             padding: 20px;
-            background-color: #f4f4f4;
+            background-color: #f5f5f5;
+        }
+        
+        h1 {
             color: #333;
         }
-
-        header {
-            background-color: #333;
-            color: white;
-            padding: 15px 20px;
-            border-radius: 5px;
-            margin-bottom: 20px;
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
         }
-
-        header h1 {
-            margin: 0;
-        }
-
-        .upload-section {
-            background-color: white;
+        
+        .upload-container {
+            background-color: #fff;
             padding: 20px;
             border-radius: 5px;
-            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
             margin-bottom: 20px;
         }
-
-        .upload-section h2 {
-            margin-top: 0;
-            border-bottom: 1px solid #eee;
-            padding-bottom: 10px;
+        
+        .map-container {
+            height: 500px;
+            margin-bottom: 20px;
         }
-
-        .form-group {
-            margin-bottom: 15px;
+        
+        #map {
+            height: 100%;
+            border-radius: 5px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
         }
-
-        .form-group label {
-            display: block;
-            margin-bottom: 5px;
-            font-weight: bold;
+        
+        .photo-gallery {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+            gap: 20px;
         }
-
-        .form-control {
+        
+        .photo-item {
+            background-color: #fff;
+            border-radius: 5px;
+            overflow: hidden;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+        
+        .photo-item img {
             width: 100%;
-            padding: 8px;
-            border: 1px solid #ddd;
-            border-radius: 4px;
+            height: 200px;
+            object-fit: cover;
         }
-
-        .btn {
-            background-color: #333;
+        
+        .photo-info {
+            padding: 15px;
+        }
+        
+        .photo-date {
+            color: #666;
+            font-size: 14px;
+        }
+        
+        .photo-location {
+            margin-top: 5px;
+            font-size: 14px;
+            color: #333;
+        }
+        
+        input[type="file"] {
+            margin-bottom: 10px;
+        }
+        
+        button {
+            background-color: #4CAF50;
             color: white;
             border: none;
             padding: 10px 15px;
-            cursor: pointer;
             border-radius: 4px;
+            cursor: pointer;
             font-size: 16px;
         }
-
-        .btn:hover {
-            background-color: #444;
+        
+        button:hover {
+            background-color: #45a049;
         }
-
-        .btn-danger {
-            background-color: #dc3545;
-        }
-
-        .btn-danger:hover {
-            background-color: #c82333;
-        }
-
-        #message {
-            padding: 10px;
+        
+        #status {
             margin-top: 10px;
+            padding: 10px;
             border-radius: 4px;
         }
-
+        
         .success {
-            background-color: #d4edda;
-            color: #155724;
-            border: 1px solid #c3e6cb;
+            background-color: #dff0d8;
+            color: #3c763d;
         }
-
+        
         .error {
-            background-color: #f8d7da;
-            color: #721c24;
-            border: 1px solid #f5c6cb;
-        }
-
-        .photo-list {
-            background-color: white;
-            padding: 20px;
-            border-radius: 5px;
-            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
-        }
-
-        .photo-item {
-            padding: 15px;
-            border-bottom: 1px solid #eee;
-        }
-
-        .photo-item:last-child {
-            border-bottom: none;
-        }
-
-        .photo-img {
-            max-width: 100%;
-            max-height: 200px;
-            display: block;
-            margin-bottom: 10px;
-        }
-
-        .btn-group {
-            margin-top: 10px;
-        }
-
-        footer {
-            margin-top: 30px;
-            text-align: center;
-            padding: 10px;
-            color: #777;
-            font-size: 14px;
-        }
-
-        @media (max-width: 768px) {
-            body {
-                padding: 10px;
-            }
+            background-color: #f2dede;
+            color: #a94442;
         }
     </style>
 </head>
-
 <body>
-    <header>
-        <h1>RPC Tid - Administratörssida</h1>
-    </header>
-
-    <div class="upload-section">
-        <h2>Ladda upp ny bild</h2>
-        <div class="form-group">
-            <label for="title">Titel</label>
-            <input type="text" id="title" class="form-control" placeholder="Ange titel">
-        </div>
-        <div class="form-group">
-            <label for="description">Beskrivning</label>
-            <textarea id="description" class="form-control" placeholder="Ange beskrivning" rows="3"></textarea>
-        </div>
-        <div class="form-group">
-            <label for="date_taken">Datum</label>
-            <input type="date" id="date_taken" class="form-control">
-        </div>
-        <div class="form-group">
-            <label for="fileInput">Välj bild</label>
+    <div class="container">
+        <h1>RPC-Tid Admin</h1>
+        
+        <div class="upload-container">
+            <h2>Ladda upp foto</h2>
+            <p>Välj en bild att ladda upp. EXIF-data kommer att extraheras automatiskt.</p>
             <input type="file" id="fileInput" accept="image/*">
+            <button onclick="uploadFile()">Ladda upp</button>
+            <div id="status"></div>
         </div>
-        <button class="btn" onclick="uploadFile()">Ladda upp</button>
-        <div id="message"></div>
-    </div>
-
-    <div class="photo-list">
+        
+        <div class="map-container">
+            <h2>Fotokarta</h2>
+            <div id="map"></div>
+        </div>
+        
         <h2>Uppladdade bilder</h2>
-        <div id="photoGallery"></div>
+        <div id="photoGallery" class="photo-gallery"></div>
     </div>
 
-    <footer>
-        <p>&copy; 2022-2025 RPC Tid. Alla rättigheter förbehållna.</p>
-    </footer>
-
+    <script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js"></script>
     <script>
-        // Base API URL - absolut URL till API-servern
+        // Baserad på originalfunktionalitet men med absoluta URL:er för API:et
         const API_BASE_URL = 'https://tid.endre.se';
-
-        // Ladda bilder när sidan laddas
-        document.addEventListener('DOMContentLoaded', () => {
+        let map;
+        let markers = [];
+        
+        // Initialisera kartan när sidan laddas
+        document.addEventListener('DOMContentLoaded', function() {
+            initMap();
             fetchPhotos();
         });
-
-        // Funktion för att hämta alla bilder
+        
+        // Initialisera kartan
+        function initMap() {
+            map = L.map('map').setView([59.8586, 17.6389], 13); // Uppsala som standardvy
+            
+            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+            }).addTo(map);
+        }
+        
+        // Hämta alla foton och visa på kartan och i galleriet
         async function fetchPhotos() {
             try {
                 const response = await fetch(`${API_BASE_URL}/api/photos`);
+                
                 if (response.ok) {
                     const photos = await response.json();
-                    displayPhotos(photos);
+                    displayPhotosOnMap(photos);
+                    displayPhotoGallery(photos);
                 } else {
-                    showMessage('Kunde inte hämta bilderna.', false);
-                    console.error('Failed to fetch photos:', response.status);
+                    showStatus('Kunde inte hämta bilder.', false);
+                    console.error('Fel vid hämtning av bilder:', response.status);
                 }
             } catch (error) {
-                showMessage('Ett fel uppstod vid hämtning av bilder.', false);
-                console.error('Error fetching photos:', error);
+                showStatus('Ett fel uppstod vid hämtning av bilder.', false);
+                console.error('Fel:', error);
             }
         }
-
-        // Funktion för att visa bilder på sidan
-        function displayPhotos(photos) {
+        
+        // Visa foton på kartan
+        function displayPhotosOnMap(photos) {
+            // Rensa befintliga markörer
+            markers.forEach(marker => map.removeLayer(marker));
+            markers = [];
+            
+            photos.forEach(photo => {
+                // Kontrollera om bilden har geolocation
+                if (photo.latitude && photo.longitude) {
+                    const marker = L.marker([photo.latitude, photo.longitude]).addTo(map);
+                    
+                    // Popup med bild och information
+                    marker.bindPopup(`
+                        <div style="text-align: center;">
+                            <img src="${API_BASE_URL}/api/photos/${photo.id}/image" style="max-width: 200px; max-height: 150px;">
+                            <p>${formatDate(photo.date_taken)}</p>
+                        </div>
+                    `);
+                    
+                    markers.push(marker);
+                }
+            });
+            
+            // Justera kartvyn om det finns markörer
+            if (markers.length > 0) {
+                const group = new L.featureGroup(markers);
+                map.fitBounds(group.getBounds());
+            }
+        }
+        
+        // Visa fotogalleri
+        function displayPhotoGallery(photos) {
             const gallery = document.getElementById('photoGallery');
             gallery.innerHTML = '';
-
+            
             if (photos.length === 0) {
                 gallery.innerHTML = '<p>Inga bilder har laddats upp ännu.</p>';
                 return;
             }
-
+            
             photos.forEach(photo => {
                 const photoDiv = document.createElement('div');
                 photoDiv.className = 'photo-item';
-
-                // Ladda bilden från det absoluta API URL:et
+                
                 const img = document.createElement('img');
                 img.src = `${API_BASE_URL}/api/photos/${photo.id}/image`;
-                img.alt = photo.title || 'Bild';
-                img.className = 'photo-img';
-
-                const title = document.createElement('h3');
-                title.textContent = photo.title || 'Ingen titel';
-
-                const desc = document.createElement('p');
-                desc.textContent = photo.description || 'Ingen beskrivning';
-
-                const date = document.createElement('p');
-                date.textContent = `Taget: ${formatDate(photo.date_taken)}`;
-
-                const btnGroup = document.createElement('div');
-                btnGroup.className = 'btn-group';
-
-                const deleteBtn = document.createElement('button');
-                deleteBtn.className = 'btn btn-danger';
-                deleteBtn.textContent = 'Ta bort';
-                deleteBtn.onclick = () => deletePhoto(photo.id);
-
-                btnGroup.appendChild(deleteBtn);
-
+                img.alt = 'Foto';
+                
+                const infoDiv = document.createElement('div');
+                infoDiv.className = 'photo-info';
+                
+                const dateP = document.createElement('p');
+                dateP.className = 'photo-date';
+                dateP.textContent = formatDate(photo.date_taken);
+                
+                const locationP = document.createElement('p');
+                locationP.className = 'photo-location';
+                if (photo.latitude && photo.longitude) {
+                    locationP.textContent = `Position: ${photo.latitude.toFixed(5)}, ${photo.longitude.toFixed(5)}`;
+                } else {
+                    locationP.textContent = 'Ingen positionsinformation';
+                }
+                
+                const deleteButton = document.createElement('button');
+                deleteButton.textContent = 'Ta bort';
+                deleteButton.onclick = () => deletePhoto(photo.id);
+                
+                infoDiv.appendChild(dateP);
+                infoDiv.appendChild(locationP);
+                infoDiv.appendChild(deleteButton);
+                
                 photoDiv.appendChild(img);
-                photoDiv.appendChild(title);
-                photoDiv.appendChild(desc);
-                photoDiv.appendChild(date);
-                photoDiv.appendChild(btnGroup);
-
+                photoDiv.appendChild(infoDiv);
+                
                 gallery.appendChild(photoDiv);
             });
         }
-
-        // Funktion för att formatera datum
+        
+        // Ladda upp fil
+        async function uploadFile() {
+            const fileInput = document.getElementById('fileInput');
+            
+            if (!fileInput.files || fileInput.files.length === 0) {
+                showStatus('Välj en fil först.', false);
+                return;
+            }
+            
+            const file = fileInput.files[0];
+            const formData = new FormData();
+            formData.append('file', file);
+            
+            showStatus('Laddar upp bild...', true);
+            
+            try {
+                // Använd rätt endpoint för uppladdning
+                const response = await fetch(`${API_BASE_URL}/api/upload`, {
+                    method: 'POST',
+                    body: formData
+                });
+                
+                if (response.ok) {
+                    const result = await response.json();
+                    showStatus('Bilden har laddats upp!', true);
+                    fileInput.value = ''; // Rensa filväljarfältet
+                    fetchPhotos(); // Uppdatera karta och galleri
+                } else {
+                    const error = await response.json();
+                    showStatus(`Uppladdningsfel: ${error.error || 'Okänt fel'}`, false);
+                }
+            } catch (error) {
+                showStatus('Ett fel uppstod vid uppladdning.', false);
+                console.error('Uppladdningsfel:', error);
+            }
+        }
+        
+        // Ta bort foto
+        async function deletePhoto(id) {
+            if (!confirm('Är du säker på att du vill ta bort detta foto?')) {
+                return;
+            }
+            
+            try {
+                const response = await fetch(`${API_BASE_URL}/api/photos/${id}`, {
+                    method: 'DELETE'
+                });
+                
+                if (response.ok) {
+                    showStatus('Fotot har tagits bort.', true);
+                    fetchPhotos(); // Uppdatera karta och galleri
+                } else {
+                    showStatus('Kunde inte ta bort fotot.', false);
+                }
+            } catch (error) {
+                showStatus('Ett fel uppstod vid borttagning.', false);
+                console.error('Borttagningsfel:', error);
+            }
+        }
+        
+        // Format date nicely
         function formatDate(dateString) {
             if (!dateString) return 'Okänt datum';
             const date = new Date(dateString);
             return date.toLocaleDateString('sv-SE');
         }
-
-        // Funktion för att ladda upp en bild
-        async function uploadFile() {
-            const fileInput = document.getElementById('fileInput');
-            const titleInput = document.getElementById('title');
-            const descriptionInput = document.getElementById('description');
-            const dateInput = document.getElementById('date_taken');
-
-            // Validera filen
-            if (!fileInput.files || fileInput.files.length === 0) {
-                showMessage('Välj en fil först.', false);
-                return;
-            }
-
-            const file = fileInput.files[0];
-            const formData = new FormData();
+        
+        // Show status message
+        function showStatus(message, isSuccess) {
+            const statusEl = document.getElementById('status');
+            statusEl.textContent = message;
+            statusEl.className = isSuccess ? 'success' : 'error';
             
-            // Lägg till filen och metadata i formData
-            formData.append('file', file);
-            formData.append('title', titleInput.value);
-            formData.append('description', descriptionInput.value);
-            formData.append('date_taken', dateInput.value || new Date().toISOString().split('T')[0]);
-
-            try {
-                // Visa laddningsmeddelande
-                showMessage('Laddar upp bild...', true);
-
-                // Använd den korrekta API-endpointen för upload
-                const response = await fetch(`${API_BASE_URL}/api/upload`, {
-                    method: 'POST',
-                    body: formData
-                });
-
-                if (response.ok) {
-                    const result = await response.json();
-                    showMessage('Bilden har laddats upp!', true);
-                    
-                    // Återställ formuläret
-                    titleInput.value = '';
-                    descriptionInput.value = '';
-                    dateInput.value = '';
-                    fileInput.value = '';
-                    
-                    // Uppdatera bildgalleriet
-                    fetchPhotos();
-                } else {
-                    const errorData = await response.json();
-                    showMessage(`Fel: ${errorData.error || 'Kunde inte ladda upp bilden.'}`, false);
-                }
-            } catch (error) {
-                showMessage('Ett fel uppstod vid uppladdning.', false);
-                console.error('Upload error:', error);
-            }
-        }
-
-        // Funktion för att ta bort en bild
-        async function deletePhoto(id) {
-            if (!confirm('Är du säker på att du vill ta bort denna bild?')) {
-                return;
-            }
-
-            try {
-                const response = await fetch(`${API_BASE_URL}/api/photos/${id}`, {
-                    method: 'DELETE'
-                });
-
-                if (response.ok) {
-                    showMessage('Bilden har tagits bort.', true);
-                    fetchPhotos();
-                } else {
-                    showMessage('Kunde inte ta bort bilden.', false);
-                }
-            } catch (error) {
-                showMessage('Ett fel uppstod vid borttagning av bilden.', false);
-                console.error('Delete error:', error);
-            }
-        }
-
-        // Funktion för att visa statusmeddelanden
-        function showMessage(message, isSuccess) {
-            const messageDiv = document.getElementById('message');
-            messageDiv.textContent = message;
-            messageDiv.className = isSuccess ? 'success' : 'error';
-            messageDiv.style.display = 'block';
-
-            // Dölj meddelandet efter 5 sekunder
+            // Hide after 5 seconds
             setTimeout(() => {
-                messageDiv.style.display = 'none';
+                statusEl.textContent = '';
+                statusEl.className = '';
             }, 5000);
         }
     </script>
 </body>
-
 </html>
