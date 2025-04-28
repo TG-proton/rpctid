@@ -178,7 +178,7 @@
     </footer>
 
     <script>
-        // Base API URL - uppdaterat till den nya arkitekturen
+        // Base API URL - absolut URL till API-servern
         const API_BASE_URL = 'https://tid.endre.se';
 
         // Ladda bilder när sidan laddas
@@ -285,8 +285,8 @@
                 // Visa laddningsmeddelande
                 showMessage('Laddar upp bild...', true);
 
-                // Använd absolut URL till API:et
-                const response = await fetch(`${API_BASE_URL}/api/photos`, {
+                // Använd den korrekta API-endpointen för upload
+                const response = await fetch(`${API_BASE_URL}/api/upload`, {
                     method: 'POST',
                     body: formData
                 });
