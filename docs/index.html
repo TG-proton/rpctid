@@ -4,11 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/dropzone/5.9.3/basic.css" />
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/dropzone/5.9.3/dropzone.css" />
-    <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/dropzone/5.9.3/dropzone.min.js"></script>
-    <title>Fotouppladdning</title>
+    <title>Visa Karta</title>
     <style>
         #map {
             height: 400px;
@@ -33,9 +29,7 @@
 <body>
     <div id="map"></div>
 
-    <h1>Ladda upp (git /docs/index.html)</h1>
-    <form action="/upload" class="dropzone" id="dropzone"></form>
-
+    <h1>Uppladdade Filer</h1>
     <table id="uploaded-photos-table">
         <thead>
             <tr>
@@ -44,39 +38,15 @@
                 <th>Koordinater</th>
                 <th>Datum</th>
                 <th>Egna anteckningar</th>
-                <th>Radera</th>
             </tr>
         </thead>
         <tbody id="uploaded-photos">
-            {% for photo in photos %}
-            <tr>
-                <td>
-                    <img src="/uploads/{{ photo[0] }}" onclick="window.open('/uploads/{{ photo[0] }}');">
-                </td>
-                <td>{{ photo[0] }}</td> <!-- Filnamn -->
-                <td>{{ photo[1] }} {{ photo[2] }}</td> <!-- Koordinater utan kommatecken -->
-                <td>{{ photo[3] }}</td>
-                <td>
-                    <input type="text" placeholder="Anteckningar" value="{{ photo[4] }}" onchange="updateNotes('{{ photo[0] }}', this.value)">
-                </td>
-                <td>
-                    <button onclick="deletePhoto('{{ photo[0] }}')">Radera</button>
-                </td>
-            </tr>
-            {% endfor %}
+            <!-- Dynamiskt innehåll laddas här -->
         </tbody>
     </table>
 
+    <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
     <script>
-        // Initiera Dropzone
-        Dropzone.options.dropzone = {
-            success: function(file, response) {
-                if (response.success) {
-                    location.reload();  // Ladda om sidan efter framgångsrik uppladdning
-                }
-            }
-        };
-
         // Initiera kartan
         var map = L.map('map').setView([0, 0], 2);
         L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
@@ -84,37 +54,49 @@
             attribution: '© OpenStreetMap'
         }).addTo(map);
 
-        // Skapa en array för att lagra alla markörers positioner
-        var markers = [];
+        // Hämta data från API:t
+        fetch('https://tid.endre.se/api/photos')
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error('Nätverksfel vid hämtning av data');
+                }
+                return response.json();
+            })
+            .then(data => {
+                var markers = [];
+                var tableBody = document.getElementById('uploaded-photos');
 
-        // Placera markörer på kartan baserat på uppladdade foton
-        {% for photo in photos %}
-        var marker = L.marker([{{ photo[1] }}, {{ photo[2] }}]).addTo(map)
-            .bindPopup('Lat: {{ photo[1] }}<br>Lon: {{ photo[2] }}<br>Datum: {{ photo[3] }}');
-        markers.push(marker);  // Lägg till markören i arrayen
-        {% endfor %}
+                data.forEach(photo => {
+                    // Lägg till markör på kartan
+                    var marker = L.marker([photo[1], photo[2]]).addTo(map)
+                        .bindPopup('Lat: ' + photo[1] + '<br>Lon: ' + photo[2] + '<br>Datum: ' + photo[3]);
+                    markers.push(marker);
 
-        // Zooma in på alla markörer
-        if (markers.length > 0) {
-            var group = L.featureGroup(markers);  // Skapa en grupp av markörer
-            map.fitBounds(group.getBounds());  // Justera kartans vy för att passa gruppen
-        }
-
-        // Funktion för att radera foto
-        function deletePhoto(filename) {
-            if (confirm('Är du säker på att du vill radera detta foto?')) {
-                fetch('/delete/' + filename, {
-                    method: 'DELETE'
-                })
-                .then(response => {
-                    if (response.ok) {
-                        location.reload();  // Ladda om sidan för att uppdatera tabellen
-                    } else {
-                        alert('Fel vid radering av foto.');
-                    }
+                    // Lägg till rad i tabellen
+                    var row = document.createElement('tr');
+                    row.innerHTML = `
+                        <td>
+                            <img src="/uploads/${photo[0]}" onclick="window.open('/uploads/${photo[0]}');">
+                        </td>
+                        <td>${photo[0]}</td>
+                        <td>${photo[1]} ${photo[2]}</td>
+                        <td>${photo[3]}</td>
+                        <td>
+                            <input type="text" placeholder="Anteckningar" value="${photo[4]}" onchange="updateNotes('${photo[0]}', this.value)">
+                        </td>
+                    `;
+                    tableBody.appendChild(row);
                 });
-            }
-        }
+
+                // Zooma in på alla markörer
+                if (markers.length > 0) {
+                    var group = L.featureGroup(markers);
+                    map.fitBounds(group.getBounds());
+                }
+            })
+            .catch(error => {
+                console.error('Fel vid hämtning av data:', error);
+            });
 
         // Funktion för att uppdatera anteckningar
         function updateNotes(filename, notes) {
