@@ -1,135 +1,321 @@
 <!DOCTYPE html>
-<html lang="en">
+<html>
 <head>
     <meta charset="UTF-8">
+    <title>Tid Admin</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/dropzone/5.9.3/basic.css" />
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/dropzone/5.9.3/dropzone.css" />
-    <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/dropzone/5.9.3/dropzone.min.js"></script>
-    <title>Fotouppladdning</title>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="" />
     <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        h1, h2 {
+            color: #333;
+        }
+
+        .upload-section {
+            margin-bottom: 30px;
+            padding: 15px;
+            background-color: #f5f5f5;
+            border-radius: 5px;
+        }
+
         #map {
-            height: 400px;
-            width: 100%;
+            height: 500px;
+            margin-bottom: 30px;
+            border-radius: 5px;
         }
-        table {
-            width: 100%;
-            border-collapse: collapse;
-            margin-top: 20px;
+
+        .photos {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 20px;
         }
-        th, td {
+
+        .photo-card {
             border: 1px solid #ddd;
-            padding: 8px;
-            text-align: center;
+            border-radius: 5px;
+            overflow: hidden;
         }
-        img {
-            width: 100px; /* Justera storleken på miniatyrbilderna */
+
+        .photo-card img {
+            width: 100%;
+            height: 200px;
+            object-fit: cover;
+        }
+
+        .photo-info {
+            padding: 15px;
+        }
+
+        .button {
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            padding: 10px 15px;
             cursor: pointer;
+            border-radius: 4px;
+        }
+
+        .delete-button {
+            background-color: #f44336;
+        }
+
+        .button:hover {
+            opacity: 0.9;
+        }
+
+        .status {
+            margin-top: 10px;
+            padding: 10px;
+            border-radius: 4px;
+            display: none;
+        }
+
+        .success {
+            background-color: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+
+        .error {
+            background-color: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
         }
     </style>
 </head>
 <body>
-    <div id="map"></div>
+    <div class="container">
+        <h1>Tid Admin</h1>
+        
+        <div class="upload-section">
+            <h2>Ladda upp en bild</h2>
+            <input type="file" id="fileInput" accept="image/*">
+            <button class="button" onclick="uploadImage()">Ladda upp</button>
+            <div id="uploadStatus" class="status"></div>
+        </div>
+        
+        <h2>Bildplatser</h2>
+        <div id="map"></div>
+        
+        <h2>Alla bilder</h2>
+        <div id="photosList" class="photos"></div>
+    </div>
 
-    <h1>Ladda upp foton till 98</h1>
-    <form action="/upload" class="dropzone" id="dropzone"></form>
-
-    <table id="uploaded-photos-table">
-        <thead>
-            <tr>
-                <th>Miniatyrbild</th>
-                <th>Filnamn</th>
-                <th>Koordinater</th>
-                <th>Datum</th>
-                <th>Egna anteckningar</th>
-                <th>Radera</th>
-            </tr>
-        </thead>
-        <tbody id="uploaded-photos">
-            {% for photo in photos %}
-            <tr>
-                <td>
-                    <img src="/uploads/{{ photo[0] }}" onclick="window.open('/uploads/{{ photo[0] }}');">
-                </td>
-                <td>{{ photo[0] }}</td> <!-- Filnamn -->
-                <td>{{ photo[1] }} {{ photo[2] }}</td> <!-- Koordinater utan kommatecken -->
-                <td>{{ photo[3] }}</td>
-                <td>
-                    <input type="text" placeholder="Anteckningar" value="{{ photo[4] }}" onchange="updateNotes('{{ photo[0] }}', this.value)">
-                </td>
-                <td>
-                    <button onclick="deletePhoto('{{ photo[0] }}')">Radera</button>
-                </td>
-            </tr>
-            {% endfor %}
-        </tbody>
-    </table>
-
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
     <script>
-        // Initiera Dropzone
-        Dropzone.options.dropzone = {
-            success: function(file, response) {
-                if (response.success) {
-                    location.reload();  // Ladda om sidan efter framgångsrik uppladdning
-                }
-            }
-        };
+        // API base URL - ändrad till absolut URL
+        const API_BASE_URL = 'https://tid.endre.se';
+        
+        // Ladda bilder när sidan laddas
+        document.addEventListener('DOMContentLoaded', function() {
+            loadPhotos();
+            initMap();
+        });
 
         // Initiera kartan
-        var map = L.map('map').setView([0, 0], 2);
-        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-            maxZoom: 19,
-            attribution: '© OpenStreetMap'
-        }).addTo(map);
+        let map;
+        let markers = [];
 
-        // Skapa en array för att lagra alla markörers positioner
-        var markers = [];
-
-        // Placera markörer på kartan baserat på uppladdade foton
-        {% for photo in photos %}
-        var marker = L.marker([{{ photo[1] }}, {{ photo[2] }}]).addTo(map)
-            .bindPopup('Lat: {{ photo[1] }}<br>Lon: {{ photo[2] }}<br>Datum: {{ photo[3] }}');
-        markers.push(marker);  // Lägg till markören i arrayen
-        {% endfor %}
-
-        // Zooma in på alla markörer
-        if (markers.length > 0) {
-            var group = L.featureGroup(markers);  // Skapa en grupp av markörer
-            map.fitBounds(group.getBounds());  // Justera kartans vy för att passa gruppen
+        function initMap() {
+            map = L.map('map').setView([59.85, 17.63], 13); // Start med Uppsala
+            
+            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                maxZoom: 19,
+                attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+            }).addTo(map);
         }
 
-        // Funktion för att radera foto
-        function deletePhoto(filename) {
-            if (confirm('Är du säker på att du vill radera detta foto?')) {
-                fetch('/delete/' + filename, {
-                    method: 'DELETE'
-                })
-                .then(response => {
-                    if (response.ok) {
-                        location.reload();  // Ladda om sidan för att uppdatera tabellen
-                    } else {
-                        alert('Fel vid radering av foto.');
-                    }
-                });
+        // Ladda alla bilder från API:et
+        async function loadPhotos() {
+            try {
+                // Använd absolut URL för API-anrop
+                const response = await fetch(`${API_BASE_URL}/api/photos`);
+                if (!response.ok) {
+                    throw new Error('Kunde inte hämta bilder');
+                }
+                
+                const photos = await response.json();
+                displayPhotos(photos);
+                displayMarkers(photos);
+            } catch (error) {
+                console.error('Fel vid hämtning av bilder:', error);
+                showStatus('uploadStatus', 'Kunde inte hämta bilder: ' + error.message, false);
             }
         }
 
-        // Funktion för att uppdatera anteckningar
-        function updateNotes(filename, notes) {
-            fetch('/update_notes/' + filename, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/x-www-form-urlencoded',
-                },
-                body: new URLSearchParams({ 'notes': notes })
-            })
-            .then(response => {
-                if (!response.ok) {
-                    alert('Fel vid uppdatering av anteckningar.');
+        // Visa alla bilder i listan
+        function displayPhotos(photos) {
+            const photosList = document.getElementById('photosList');
+            photosList.innerHTML = '';
+            
+            if (photos.length === 0) {
+                photosList.innerHTML = '<p>Inga bilder har laddats upp ännu.</p>';
+                return;
+            }
+            
+            photos.forEach(photo => {
+                const photoCard = document.createElement('div');
+                photoCard.className = 'photo-card';
+                
+                const img = document.createElement('img');
+                // Använd absolut URL för bildkälla
+                img.src = `${API_BASE_URL}/api/photos/${photo.id}/image`;
+                img.alt = 'Foto';
+                
+                const infoDiv = document.createElement('div');
+                infoDiv.className = 'photo-info';
+                
+                const date = document.createElement('p');
+                date.textContent = `Datum: ${formatDate(photo.date_taken)}`;
+                
+                const location = document.createElement('p');
+                if (photo.latitude && photo.longitude) {
+                    location.textContent = `Plats: ${photo.latitude.toFixed(5)}, ${photo.longitude.toFixed(5)}`;
+                } else {
+                    location.textContent = 'Plats: Okänd';
+                }
+                
+                const deleteButton = document.createElement('button');
+                deleteButton.className = 'button delete-button';
+                deleteButton.textContent = 'Ta bort';
+                deleteButton.onclick = () => deletePhoto(photo.id);
+                
+                infoDiv.appendChild(date);
+                infoDiv.appendChild(location);
+                infoDiv.appendChild(deleteButton);
+                
+                photoCard.appendChild(img);
+                photoCard.appendChild(infoDiv);
+                
+                photosList.appendChild(photoCard);
+            });
+        }
+
+        // Visa markörer på kartan
+        function displayMarkers(photos) {
+            // Rensa befintliga markörer
+            markers.forEach(marker => map.removeLayer(marker));
+            markers = [];
+            
+            const validPositions = [];
+            
+            photos.forEach(photo => {
+                if (photo.latitude && photo.longitude) {
+                    const marker = L.marker([photo.latitude, photo.longitude]).addTo(map);
+                    
+                    // Skapa popup med bild och info
+                    const popupContent = `
+                        <div style="text-align: center; max-width: 200px;">
+                            <img src="${API_BASE_URL}/api/photos/${photo.id}/image" style="max-width: 100%; max-height: 150px;">
+                            <p>${formatDate(photo.date_taken)}</p>
+                        </div>
+                    `;
+                    
+                    marker.bindPopup(popupContent);
+                    markers.push(marker);
+                    validPositions.push([photo.latitude, photo.longitude]);
                 }
             });
+            
+            // Justera kartvyn om det finns markörer
+            if (validPositions.length > 0) {
+                const bounds = L.latLngBounds(validPositions);
+                map.fitBounds(bounds);
+            }
+        }
+
+        // Ladda upp en bild
+        async function uploadImage() {
+            const fileInput = document.getElementById('fileInput');
+            const statusEl = document.getElementById('uploadStatus');
+            
+            if (!fileInput.files || fileInput.files.length === 0) {
+                showStatus('uploadStatus', 'Välj en fil först', false);
+                return;
+            }
+            
+            const file = fileInput.files[0];
+            const formData = new FormData();
+            formData.append('file', file);
+            
+            try {
+                showStatus('uploadStatus', 'Laddar upp...', true);
+                
+                // Använd absolut URL och korrekt endpoint för uppladdning
+                const response = await fetch(`${API_BASE_URL}/api/upload`, {
+                    method: 'POST',
+                    body: formData
+                });
+                
+                if (!response.ok) {
+                    const error = await response.json();
+                    throw new Error(error.message || 'Uppladdningsfel');
+                }
+                
+                showStatus('uploadStatus', 'Bilden har laddats upp!', true);
+                fileInput.value = '';
+                
+                // Ladda om bilderna och uppdatera kartan
+                loadPhotos();
+            } catch (error) {
+                console.error('Uppladdningsfel:', error);
+                showStatus('uploadStatus', 'Kunde inte ladda upp: ' + error.message, false);
+            }
+        }
+
+        // Ta bort en bild
+        async function deletePhoto(id) {
+            if (!confirm('Är du säker på att du vill ta bort denna bild?')) {
+                return;
+            }
+            
+            try {
+                // Använd absolut URL för borttagning
+                const response = await fetch(`${API_BASE_URL}/api/photos/${id}`, {
+                    method: 'DELETE'
+                });
+                
+                if (!response.ok) {
+                    throw new Error('Kunde inte ta bort bilden');
+                }
+                
+                showStatus('uploadStatus', 'Bilden har tagits bort', true);
+                loadPhotos();
+            } catch (error) {
+                console.error('Fel vid borttagning:', error);
+                showStatus('uploadStatus', 'Kunde inte ta bort bilden: ' + error.message, false);
+            }
+        }
+
+        // Format date nicely
+        function formatDate(dateString) {
+            if (!dateString) return 'Okänt datum';
+            const date = new Date(dateString);
+            return date.toLocaleDateString('sv-SE');
+        }
+
+        // Show status message
+        function showStatus(elementId, message, isSuccess) {
+            const statusEl = document.getElementById(elementId);
+            statusEl.textContent = message;
+            statusEl.className = isSuccess ? 'status success' : 'status error';
+            statusEl.style.display = 'block';
+            
+            // Hide after 5 seconds
+            setTimeout(() => {
+                statusEl.style.display = 'none';
+            }, 5000);
         }
     </script>
 </body>
