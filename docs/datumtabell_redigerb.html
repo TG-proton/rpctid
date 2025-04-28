@@ -121,11 +121,19 @@ td.editable:focus {
     border: none;
     border-radius: 4px;
 }
+
+.add-row-button {
+    background-color: #3498db;
+    color: white;
+    border: none;
+    border-radius: 4px;
+}
 </style>
 </head>
 
 <body>
 <div class="buttons">
+    <button class="add-row-button" onclick="addNewRow()">Lägg till rad</button>
     <button class="export-button" onclick="exportTable()">Exportera HTML</button>
 </div>
 
@@ -182,7 +190,7 @@ td.editable:focus {
         <td class="center bold">Mil</td>
         <td class="noborder"></td>
     </tr>
-    <tr>
+    <tr class="data-row">
         <td class="center date editable" contenteditable="true">05-mar</td>
         <td class="left editable" contenteditable="true">Måndag</td>
         <td class="right time editable" contenteditable="true">20:40</td>
@@ -199,194 +207,7 @@ td.editable:focus {
         <td class="right editable" contenteditable="true">2</td>
         <td class="noborder"></td>
     </tr>
-    <tr>
-        <td class="center date editable" contenteditable="true">&nbsp;</td>
-        <td class="left editable" contenteditable="true">&nbsp;</td>
-        <td class="right time editable" contenteditable="true">&nbsp;</td>
-        <td class="right time editable" contenteditable="true">&nbsp;</td>
-        <td class="right time editable" contenteditable="true">&nbsp;</td>
-        <td class="right time editable" contenteditable="true">&nbsp;</td>
-        <td class="center time editable" contenteditable="true">&nbsp;</td>
-        <td class="right decimal editable" contenteditable="true">&nbsp;</td>
-        <td class="center editable" contenteditable="true">&nbsp;</td>
-        <td class="center editable" contenteditable="true">&nbsp;</td>
-        <td class="editable" contenteditable="true">&nbsp;</td>
-        <td class="center editable" contenteditable="true">&nbsp;</td>
-        <td class="center editable" contenteditable="true">&nbsp;</td>
-        <td class="right editable" contenteditable="true">&nbsp;</td>
-        <td class="noborder"></td>
-    </tr>
-    <tr>
-        <td class="center date editable" contenteditable="true">&nbsp;</td>
-        <td class="left editable" contenteditable="true">&nbsp;</td>
-        <td class="right time editable" contenteditable="true">&nbsp;</td>
-        <td class="right time editable" contenteditable="true">&nbsp;</td>
-        <td class="right time editable" contenteditable="true">&nbsp;</td>
-        <td class="right time editable" contenteditable="true">&nbsp;</td>
-        <td class="center time editable" contenteditable="true">&nbsp;</td>
-        <td class="right decimal editable" contenteditable="true">&nbsp;</td>
-        <td class="center editable" contenteditable="true">&nbsp;</td>
-        <td class="center editable" contenteditable="true">&nbsp;</td>
-        <td class="editable" contenteditable="true">&nbsp;</td>
-        <td class="center editable" contenteditable="true">&nbsp;</td>
-        <td class="center editable" contenteditable="true">&nbsp;</td>
-        <td class="right editable" contenteditable="true">&nbsp;</td>
-        <td class="noborder"></td>
-    </tr>
-    <tr>
-        <td class="center date editable" contenteditable="true">&nbsp;</td>
-        <td class="left editable" contenteditable="true">&nbsp;</td>
-        <td class="right time editable" contenteditable="true">&nbsp;</td>
-        <td class="right time editable" contenteditable="true">&nbsp;</td>
-        <td class="right time editable" contenteditable="true">&nbsp;</td>
-        <td class="right time editable" contenteditable="true">&nbsp;</td>
-        <td class="center time editable" contenteditable="true">&nbsp;</td>
-        <td class="right decimal editable" contenteditable="true">&nbsp;</td>
-        <td class="center editable" contenteditable="true">&nbsp;</td>
-        <td class="center editable" contenteditable="true">&nbsp;</td>
-        <td class="editable" contenteditable="true">&nbsp;</td>
-        <td class="center editable" contenteditable="true">&nbsp;</td>
-        <td class="center editable" contenteditable="true">&nbsp;</td>
-        <td class="right editable" contenteditable="true">&nbsp;</td>
-        <td class="noborder"></td>
-    </tr>
-    <tr>
-        <td class="center date editable" contenteditable="true">&nbsp;</td>
-        <td class="left editable" contenteditable="true">&nbsp;</td>
-        <td class="right time editable" contenteditable="true">&nbsp;</td>
-        <td class="right time editable" contenteditable="true">&nbsp;</td>
-        <td class="right time editable" contenteditable="true">&nbsp;</td>
-        <td class="right time editable" contenteditable="true">&nbsp;</td>
-        <td class="center time editable" contenteditable="true">&nbsp;</td>
-        <td class="right decimal editable" contenteditable="true">&nbsp;</td>
-        <td class="center editable" contenteditable="true">&nbsp;</td>
-        <td class="center editable" contenteditable="true">&nbsp;</td>
-        <td class="editable" contenteditable="true">&nbsp;</td>
-        <td class="center editable" contenteditable="true">&nbsp;</td>
-        <td class="center editable" contenteditable="true">&nbsp;</td>
-        <td class="right editable" contenteditable="true">&nbsp;</td>
-        <td class="noborder"></td>
-    </tr>
-    <tr>
-        <td class="center date editable" contenteditable="true">&nbsp;</td>
-        <td class="left editable" contenteditable="true">&nbsp;</td>
-        <td class="right time editable" contenteditable="true">&nbsp;</td>
-        <td class="right time editable" contenteditable="true">&nbsp;</td>
-        <td class="right time editable" contenteditable="true">&nbsp;</td>
-        <td class="right time editable" contenteditable="true">&nbsp;</td>
-        <td class="center time editable" contenteditable="true">&nbsp;</td>
-        <td class="right decimal editable" contenteditable="true">&nbsp;</td>
-        <td class="center editable" contenteditable="true">&nbsp;</td>
-        <td class="center editable" contenteditable="true">&nbsp;</td>
-        <td class="editable" contenteditable="true">&nbsp;</td>
-        <td class="center editable" contenteditable="true">&nbsp;</td>
-        <td class="center editable" contenteditable="true">&nbsp;</td>
-        <td class="right editable" contenteditable="true">&nbsp;</td>
-        <td class="noborder"></td>
-    </tr>
-    <tr>
-        <td class="center date editable" contenteditable="true">&nbsp;</td>
-        <td class="left editable" contenteditable="true">&nbsp;</td>
-        <td class="right time editable" contenteditable="true">&nbsp;</td>
-        <td class="right time editable" contenteditable="true">&nbsp;</td>
-        <td class="right time editable" contenteditable="true">&nbsp;</td>
-        <td class="right time editable" contenteditable="true">&nbsp;</td>
-        <td class="center time editable" contenteditable="true">&nbsp;</td>
-        <td class="right decimal editable" contenteditable="true">&nbsp;</td>
-        <td class="center editable" contenteditable="true">&nbsp;</td>
-        <td class="center editable" contenteditable="true">&nbsp;</td>
-        <td class="editable" contenteditable="true">&nbsp;</td>
-        <td class="center editable" contenteditable="true">&nbsp;</td>
-        <td class="center editable" contenteditable="true">&nbsp;</td>
-        <td class="right editable" contenteditable="true">&nbsp;</td>
-        <td class="noborder"></td>
-    </tr>
-    <tr>
-        <td class="center date editable" contenteditable="true">&nbsp;</td>
-        <td class="left editable" contenteditable="true">&nbsp;</td>
-        <td class="right time editable" contenteditable="true">&nbsp;</td>
-        <td class="right time editable" contenteditable="true">&nbsp;</td>
-        <td class="right time editable" contenteditable="true">&nbsp;</td>
-        <td class="right time editable" contenteditable="true">&nbsp;</td>
-        <td class="center time editable" contenteditable="true">&nbsp;</td>
-        <td class="right decimal editable" contenteditable="true">&nbsp;</td>
-        <td class="center editable" contenteditable="true">&nbsp;</td>
-        <td class="center editable" contenteditable="true">&nbsp;</td>
-        <td class="editable" contenteditable="true">&nbsp;</td>
-        <td class="center editable" contenteditable="true">&nbsp;</td>
-        <td class="center editable" contenteditable="true">&nbsp;</td>
-        <td class="right editable" contenteditable="true">&nbsp;</td>
-        <td class="noborder"></td>
-    </tr>
-    <tr>
-        <td class="center date editable" contenteditable="true">&nbsp;</td>
-        <td class="left editable" contenteditable="true">&nbsp;</td>
-        <td class="right time editable" contenteditable="true">&nbsp;</td>
-        <td class="right time editable" contenteditable="true">&nbsp;</td>
-        <td class="right time editable" contenteditable="true">&nbsp;</td>
-        <td class="right time editable" contenteditable="true">&nbsp;</td>
-        <td class="center time editable" contenteditable="true">&nbsp;</td>
-        <td class="right decimal editable" contenteditable="true">&nbsp;</td>
-        <td class="center editable" contenteditable="true">&nbsp;</td>
-        <td class="center editable" contenteditable="true">&nbsp;</td>
-        <td class="editable" contenteditable="true">&nbsp;</td>
-        <td class="center editable" contenteditable="true">&nbsp;</td>
-        <td class="center editable" contenteditable="true">&nbsp;</td>
-        <td class="right editable" contenteditable="true">&nbsp;</td>
-        <td class="noborder"></td>
-    </tr>
-    <tr>
-        <td class="center date editable" contenteditable="true">&nbsp;</td>
-        <td class="left editable" contenteditable="true">&nbsp;</td>
-        <td class="right time editable" contenteditable="true">&nbsp;</td>
-        <td class="right time editable" contenteditable="true">&nbsp;</td>
-        <td class="right time editable" contenteditable="true">&nbsp;</td>
-        <td class="right time editable" contenteditable="true">&nbsp;</td>
-        <td class="center time editable" contenteditable="true">&nbsp;</td>
-        <td class="right decimal editable" contenteditable="true">&nbsp;</td>
-        <td class="center editable" contenteditable="true">&nbsp;</td>
-        <td class="center editable" contenteditable="true">&nbsp;</td>
-        <td class="editable" contenteditable="true">&nbsp;</td>
-        <td class="center editable" contenteditable="true">&nbsp;</td>
-        <td class="center editable" contenteditable="true">&nbsp;</td>
-        <td class="right editable" contenteditable="true">&nbsp;</td>
-        <td class="noborder"></td>
-    </tr>
-    <tr>
-        <td class="center date editable" contenteditable="true">&nbsp;</td>
-        <td class="left editable" contenteditable="true">&nbsp;</td>
-        <td class="right time editable" contenteditable="true">&nbsp;</td>
-        <td class="right time editable" contenteditable="true">&nbsp;</td>
-        <td class="right time editable" contenteditable="true">&nbsp;</td>
-        <td class="right time editable" contenteditable="true">&nbsp;</td>
-        <td class="center time editable" contenteditable="true">&nbsp;</td>
-        <td class="right decimal editable" contenteditable="true">&nbsp;</td>
-        <td class="center editable" contenteditable="true">&nbsp;</td>
-        <td class="center editable" contenteditable="true">&nbsp;</td>
-        <td class="editable" contenteditable="true">&nbsp;</td>
-        <td class="center editable" contenteditable="true">&nbsp;</td>
-        <td class="center editable" contenteditable="true">&nbsp;</td>
-        <td class="right editable" contenteditable="true">&nbsp;</td>
-        <td class="noborder"></td>
-    </tr>
-    <tr>
-        <td class="center date editable" contenteditable="true">&nbsp;</td>
-        <td class="left editable" contenteditable="true">&nbsp;</td>
-        <td class="right time editable" contenteditable="true">&nbsp;</td>
-        <td class="right time editable" contenteditable="true">&nbsp;</td>
-        <td class="right time editable" contenteditable="true">&nbsp;</td>
-        <td class="right time editable" contenteditable="true">&nbsp;</td>
-        <td class="center time editable" contenteditable="true">&nbsp;</td>
-        <td class="right decimal editable" contenteditable="true">&nbsp;</td>
-        <td class="center editable" contenteditable="true">&nbsp;</td>
-        <td class="center editable" contenteditable="true">&nbsp;</td>
-        <td class="editable" contenteditable="true">&nbsp;</td>
-        <td class="center editable" contenteditable="true">&nbsp;</td>
-        <td class="center editable" contenteditable="true">&nbsp;</td>
-        <td class="right editable" contenteditable="true">&nbsp;</td>
-        <td class="noborder"></td>
-    </tr>
-    <tr>
+    <tr class="data-row">
         <td class="center date editable" contenteditable="true">&nbsp;</td>
         <td class="left editable" contenteditable="true">&nbsp;</td>
         <td class="right time editable" contenteditable="true">&nbsp;</td>
@@ -454,12 +275,40 @@ td.editable:focus {
 </div>
 
 <div class="buttons">
+    <button class="add-row-button" onclick="addNewRow()">Lägg till rad</button>
     <button class="export-button" onclick="exportTable()">Exportera HTML</button>
 </div>
 
 <div id="export-container" style="display:none;"></div>
 
 <script>
+// Funktion för att lägga till en ny rad
+function addNewRow() {
+    // Hämta referens till tabellen och den första dataraden (för att klona)
+    const table = document.getElementById('timesheet');
+    const templateRow = document.querySelector('.data-row');
+    
+    // Klona raden
+    const newRow = templateRow.cloneNode(true);
+    
+    // Rensa innehållet i alla celler
+    newRow.querySelectorAll('td.editable').forEach(cell => {
+        cell.textContent = '';
+    });
+    
+    // Sätt upp event listeners för nya celler
+    newRow.querySelectorAll('td.editable').forEach(cell => {
+        cell.addEventListener('input', calculateSums);
+    });
+    
+    // Hitta den sista dataraden och infoga den nya raden efter den
+    const lastDataRow = document.querySelector('.footer-row').previousElementSibling;
+    lastDataRow.after(newRow);
+    
+    // Uppdatera summorna
+    calculateSums();
+}
+
 // Funktion för att exportera tabellen
 function exportTable() {
     // Skapa en kopia av hela dokumentet
@@ -483,62 +332,55 @@ function exportTable() {
 document.addEventListener('DOMContentLoaded', function() {
     // När någon cell ändras
     document.querySelectorAll('td.editable').forEach(cell => {
-        cell.addEventListener('input', function() {
-            calculateSums();
-        });
+        cell.addEventListener('input', calculateSums);
     });
 });
 
 // Beräkna summor baserat på inmatade värden
 function calculateSums() {
-    // Detta är en förenklad version - du kan utöka med mer avancerad logik vid behov
-    try {
-        // Samla alla timvärden från cellerna
-        let totalHours = 0;
-        let totalDistance = 0;
-        
-        // Räkna ihop summan av timmarna (cell i kolumn 8)
-        document.querySelectorAll('tr:not(.footer-row) td.decimal.editable').forEach(cell => {
-            const value = parseFloat(cell.textContent.replace(',', '.'));
-            if (!isNaN(value)) {
-                totalHours += value;
-            }
-        });
-        
-        // Räkna ihop summan av mil (cell i kolumn 14)
-        document.querySelectorAll('tr:not(.footer-row) td.right.editable:nth-child(14)').forEach(cell => {
-            const value = parseFloat(cell.textContent.replace(',', '.'));
-            if (!isNaN(value)) {
-                totalDistance += value;
-            }
-        });
-        
-        // Uppdatera summeringsraden
-        const sumHoursCell = document.querySelector('.footer-row td.decimal.editable');
-        const sumDistanceCell = document.querySelector('.footer-row td.right.editable:nth-child(14)');
-        
-        if (sumHoursCell) {
-            sumHoursCell.textContent = totalHours.toFixed(2).replace('.', ',');
+    // Samla alla timvärden från cellerna
+    let totalHours = 0;
+    let totalDistance = 0;
+    
+    // Räkna ihop summan av timmarna (cell i kolumn 8)
+    document.querySelectorAll('.data-row td.decimal.editable').forEach(cell => {
+        const value = parseFloat(cell.textContent.replace(',', '.').trim());
+        if (!isNaN(value)) {
+            totalHours += value;
         }
-        
-        if (sumDistanceCell) {
-            sumDistanceCell.textContent = totalDistance;
+    });
+    
+    // Räkna ihop summan av mil (cell i kolumn 14)
+    document.querySelectorAll('.data-row td.right.editable:nth-child(14)').forEach(cell => {
+        const value = parseFloat(cell.textContent.replace(',', '.').trim());
+        if (!isNaN(value)) {
+            totalDistance += value;
         }
-        
-        // Hämta timpris och mil-pris
-        const hourlyRate = parseFloat(document.querySelector('tr:nth-last-child(2) td.right.editable').textContent);
-        const mileageRate = parseFloat(document.querySelector('tr:nth-last-child(2) td.right.editable:nth-child(14)').textContent);
-        
-        // Beräkna totaler
-        if (!isNaN(hourlyRate) && !isNaN(totalHours)) {
-            document.querySelector('tr:last-child td.right.bold.currency').textContent = Math.round(totalHours * hourlyRate);
-        }
-        
-        if (!isNaN(mileageRate) && !isNaN(totalDistance)) {
-            document.querySelector('tr:last-child td.right.bold.currency:last-of-type').textContent = (totalDistance * mileageRate).toFixed(2).replace('.', ',');
-        }
-    } catch (e) {
-        console.error("Beräkningsfel:", e);
+    });
+    
+    // Uppdatera summeringsraden
+    const sumHoursCell = document.querySelector('.footer-row td.decimal.editable');
+    const sumDistanceCell = document.querySelector('.footer-row td.right.editable:nth-child(14)');
+    
+    if (sumHoursCell) {
+        sumHoursCell.textContent = totalHours.toFixed(2).replace('.', ',');
+    }
+    
+    if (sumDistanceCell) {
+        sumDistanceCell.textContent = totalDistance;
+    }
+    
+    // Hämta timpris och mil-pris
+    const hourlyRate = parseFloat(document.querySelector('tr:nth-last-child(2) td.right.editable').textContent.trim());
+    const mileageRate = parseFloat(document.querySelector('tr:nth-last-child(2) td.right.editable:nth-child(14)').textContent.trim());
+    
+    // Beräkna totaler
+    if (!isNaN(hourlyRate) && !isNaN(totalHours)) {
+        document.querySelector('tr:last-child td.right.bold.currency').textContent = Math.round(totalHours * hourlyRate);
+    }
+    
+    if (!isNaN(mileageRate) && !isNaN(totalDistance)) {
+        document.querySelector('tr:last-child td.right.bold.currency:last-of-type').textContent = (totalDistance * mileageRate).toFixed(2).replace('.', ',');
     }
 }
 </script>
