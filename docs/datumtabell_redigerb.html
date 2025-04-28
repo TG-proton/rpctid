@@ -62,10 +62,6 @@ td.noborder, td:empty.noborder, th.noborder {
 .col-15 { width: 40pt; }
 
 /* Format för speciella celler */
-.currency::after {
-    content: " kr";
-}
-
 .decimal {
     mso-number-format: "Fixed";
 }
@@ -257,14 +253,14 @@ td.editable:focus {
         <td class="noborder"></td>
         <td class="noborder"></td>
         <td class="noborder"></td>
-        <td class="left noborder bold">Totalt</td>
+        <td class="left noborder bold">Totalt kr</td>
         <td class="noborder"></td>
-        <td class="right bold currency" colspan="3" id="totalHours">700</td>
+        <td colspan="3" class="right bold" id="totalHours">700 kr</td>
         <td class="noborder"></td>
         <td class="noborder"></td>
         <td class="noborder"></td>
-        <td class="center bold">Totalt</td>
-        <td class="right bold currency" colspan="2" id="totalMiles">54,00</td>
+        <td class="center bold">Totalt kr</td>
+        <td colspan="2" class="right bold" id="totalMiles">54,00 kr</td>
         <td class="noborder"></td>
     </tr>
 </table>
@@ -376,11 +372,11 @@ function calculateSums() {
     // Beräkna totaler och uppdatera cellerna direkt
     // 1. Total för timmar (timmar * timpris)
     const totalHoursCost = Math.round(totalHours * hourlyRate);
-    document.getElementById('totalHours').textContent = totalHoursCost;
+    document.getElementById('totalHours').textContent = totalHoursCost + " kr";
     
     // 2. Total för mil (mil * milkostnad)
     const totalMilesCost = (totalDistance * mileageRate).toFixed(2).replace('.', ',');
-    document.getElementById('totalMiles').textContent = totalMilesCost;
+    document.getElementById('totalMiles').textContent = totalMilesCost + " kr";
 }
 </script>
 </body>
