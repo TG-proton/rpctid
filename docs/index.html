@@ -1,83 +1,136 @@
 <!DOCTYPE html>
-<html lang="sv">
+<html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Startsida</title>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/dropzone/5.9.3/basic.css" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/dropzone/5.9.3/dropzone.css" />
+    <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/dropzone/5.9.3/dropzone.min.js"></script>
+    <title>Fotouppladdning</title>
     <style>
-        body {
-            font-family: Arial, sans-serif;
-            margin: 0;
-            padding: 0;
-            background-color: #f4f4f4;
-            color: #333;
-        }
-        header {
-            background-color: #0077cc;
-            color: white;
-            padding: 1rem 2rem;
-            text-align: center;
-        }
-        main {
-            padding: 2rem;
-            max-width: 800px;
-            margin: auto;
+        #map {
+            height: 400px;
+            width: 100%;
         }
         table {
             width: 100%;
             border-collapse: collapse;
-            margin-top: 2rem;
+            margin-top: 20px;
         }
         th, td {
-            border: 1px solid #ccc;
-            padding: 0.5rem;
-            text-align: left;
+            border: 1px solid #ddd;
+            padding: 8px;
+            text-align: center;
         }
-        th {
-            background-color: #0077cc;
-            color: white;
-        }
-        tr:nth-child(even) {
-            background-color: #f9f9f9;
+        img {
+            width: 100px; /* Justera storleken på miniatyrbilderna */
+            cursor: pointer;
         }
     </style>
 </head>
 <body>
-    <header>
-        <h1>Välkommen till Startsidan</h1>
-        <p>Här är en översikt över tidsdata</p>
-    </header>
-    <main>
-        <h2>Dataöversikt</h2>
-        <table>
-            <thead>
-                <tr>
-                    <th>Datum</th>
-                    <th>Start</th>
-                    <th>Avslut</th>
-                    <th>Tim.</th>
-                    <th>Rast</th>
-                    <th>Summa</th>
-                    <th>Objekt</th>
-                    <th>Åtgärd</th>
-                    <th>Beställd av</th>
-                </tr>
-            </thead>
-            <tbody>
-                <tr>
-                    <td>05-mar</td>
-                    <td>20:40</td>
-                    <td>23:15</td>
-                    <td>02:35</td>
-                    <td>00:15</td>
-                    <td>02:20</td>
-                    <td>2,33</td>
-                    <td>Rep. stålhäckar</td>
-                    <td>Jörgen</td>
-                </tr>
-                <!-- Lägg till fler rader här vid behov -->
-            </tbody>
-        </table>
-    </main>
+    <div id="map"></div>
+
+    <h1>Ladda upp (git /docs/index.html)</h1>
+    <form action="/upload" class="dropzone" id="dropzone"></form>
+
+    <table id="uploaded-photos-table">
+        <thead>
+            <tr>
+                <th>Miniatyrbild</th>
+                <th>Filnamn</th>
+                <th>Koordinater</th>
+                <th>Datum</th>
+                <th>Egna anteckningar</th>
+                <th>Radera</th>
+            </tr>
+        </thead>
+        <tbody id="uploaded-photos">
+            {% for photo in photos %}
+            <tr>
+                <td>
+                    <img src="/uploads/{{ photo[0] }}" onclick="window.open('/uploads/{{ photo[0] }}');">
+                </td>
+                <td>{{ photo[0] }}</td> <!-- Filnamn -->
+                <td>{{ photo[1] }} {{ photo[2] }}</td> <!-- Koordinater utan kommatecken -->
+                <td>{{ photo[3] }}</td>
+                <td>
+                    <input type="text" placeholder="Anteckningar" value="{{ photo[4] }}" onchange="updateNotes('{{ photo[0] }}', this.value)">
+                </td>
+                <td>
+                    <button onclick="deletePhoto('{{ photo[0] }}')">Radera</button>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+
+    <script>
+        // Initiera Dropzone
+        Dropzone.options.dropzone = {
+            success: function(file, response) {
+                if (response.success) {
+                    location.reload();  // Ladda om sidan efter framgångsrik uppladdning
+                }
+            }
+        };
+
+        // Initiera kartan
+        var map = L.map('map').setView([0, 0], 2);
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            maxZoom: 19,
+            attribution: '© OpenStreetMap'
+        }).addTo(map);
+
+        // Skapa en array för att lagra alla markörers positioner
+        var markers = [];
+
+        // Placera markörer på kartan baserat på uppladdade foton
+        {% for photo in photos %}
+        var marker = L.marker([{{ photo[1] }}, {{ photo[2] }}]).addTo(map)
+            .bindPopup('Lat: {{ photo[1] }}<br>Lon: {{ photo[2] }}<br>Datum: {{ photo[3] }}');
+        markers.push(marker);  // Lägg till markören i arrayen
+        {% endfor %}
+
+        // Zooma in på alla markörer
+        if (markers.length > 0) {
+            var group = L.featureGroup(markers);  // Skapa en grupp av markörer
+            map.fitBounds(group.getBounds());  // Justera kartans vy för att passa gruppen
+        }
+
+        // Funktion för att radera foto
+        function deletePhoto(filename) {
+            if (confirm('Är du säker på att du vill radera detta foto?')) {
+                fetch('/delete/' + filename, {
+                    method: 'DELETE'
+                })
+                .then(response => {
+                    if (response.ok) {
+                        location.reload();  // Ladda om sidan för att uppdatera tabellen
+                    } else {
+                        alert('Fel vid radering av foto.');
+                    }
+                });
+            }
+        }
+
+        // Funktion för att uppdatera anteckningar
+        function updateNotes(filename, notes) {
+            fetch('/update_notes/' + filename, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded',
+                },
+                body: new URLSearchParams({ 'notes': notes })
+            })
+            .then(response => {
+                if (!response.ok) {
+                    alert('Fel vid uppdatering av anteckningar.');
+                }
+            });
+        }
+    </script>
 </body>
 </html>
