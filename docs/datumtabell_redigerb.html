@@ -225,13 +225,13 @@ td.editable:focus {
         <td class="noborder"></td>
         <td class="noborder"></td>
         <td class="noborder"></td>
-        <td class="right decimal editable" contenteditable="true">2,33</td>
+        <td class="right decimal editable" id="totalHoursSum" contenteditable="true">2,33</td>
         <td class="noborder"></td>
         <td class="noborder"></td>
         <td class="noborder"></td>
         <td class="noborder"></td>
         <td class="center noborder">Mil</td>
-        <td class="right editable" contenteditable="true">2</td>
+        <td class="right editable" id="totalMilesSum" contenteditable="true">2</td>
         <td class="noborder"></td>
     </tr>
     <tr>
@@ -240,13 +240,13 @@ td.editable:focus {
         <td class="noborder"></td>
         <td class="left noborder" colspan="3">Timpris</td>
         <td class="noborder"></td>
-        <td class="right editable" contenteditable="true">300</td>
+        <td class="right editable" id="hourlyRateCell" contenteditable="true">300</td>
         <td class="noborder"></td>
         <td class="noborder"></td>
         <td class="noborder"></td>
         <td class="center noborder">Kronor per mil</td>
         <td class="noborder"></td>
-        <td class="right editable" contenteditable="true">27</td>
+        <td class="right editable" id="mileageRateCell" contenteditable="true">27</td>
         <td class="noborder"></td>
     </tr>
     <tr>
@@ -255,12 +255,12 @@ td.editable:focus {
         <td class="noborder"></td>
         <td class="left noborder bold">Totalt kr</td>
         <td class="noborder"></td>
-        <td colspan="3" class="right bold" id="totalHours">700 kr</td>
+        <td class="right bold" colspan="3" id="totalHoursCost" contenteditable="true">700 kr</td>
         <td class="noborder"></td>
         <td class="noborder"></td>
         <td class="noborder"></td>
         <td class="center bold">Totalt kr</td>
-        <td colspan="2" class="right bold" id="totalMiles">54,00 kr</td>
+        <td class="right bold" colspan="2" id="totalMilesCost" contenteditable="true">54,00 kr</td>
         <td class="noborder"></td>
     </tr>
 </table>
@@ -269,9 +269,8 @@ td.editable:focus {
 <div class="buttons">
     <button class="add-row-button" onclick="addNewRow()">Lägg till rad</button>
     <button class="export-button" onclick="exportTable()">Exportera HTML</button>
+    <button onclick="calculateSums()">Uppdatera summor</button>
 </div>
-
-<div id="export-container" style="display:none;"></div>
 
 <script>
 // Funktion för att lägga till en ny rad
@@ -331,6 +330,12 @@ document.addEventListener('DOMContentLoaded', function() {
     calculateSums();
 });
 
+// Hjälpfunktion för att konvertera värden med komma till punkt
+function parseNumberValue(str) {
+    if (!str || str.trim() === '') return 0;
+    return parseFloat(str.replace(',', '.').trim());
+}
+
 // Beräkna summor baserat på inmatade värden
 function calculateSums() {
     // Samla alla timvärden från cellerna
@@ -339,7 +344,7 @@ function calculateSums() {
     
     // Räkna ihop summan av timmarna (cell i kolumn 8)
     document.querySelectorAll('.data-row td.decimal.editable').forEach(cell => {
-        const value = parseFloat(cell.textContent.replace(',', '.').trim());
+        const value = parseNumberValue(cell.textContent);
         if (!isNaN(value)) {
             totalHours += value;
         }
@@ -347,15 +352,15 @@ function calculateSums() {
     
     // Räkna ihop summan av mil (cell i kolumn 14)
     document.querySelectorAll('.data-row td.right.editable:nth-child(14)').forEach(cell => {
-        const value = parseFloat(cell.textContent.replace(',', '.').trim());
+        const value = parseNumberValue(cell.textContent);
         if (!isNaN(value)) {
             totalDistance += value;
         }
     });
     
     // Uppdatera summeringsraden
-    const sumHoursCell = document.querySelector('.footer-row td.decimal.editable');
-    const sumDistanceCell = document.querySelector('.footer-row td.right.editable:nth-child(14)');
+    const sumHoursCell = document.getElementById('totalHoursSum');
+    const sumDistanceCell = document.getElementById('totalMilesSum');
     
     if (sumHoursCell) {
         sumHoursCell.textContent = totalHours.toFixed(2).replace('.', ',');
@@ -366,17 +371,17 @@ function calculateSums() {
     }
     
     // Hämta timpris och mil-pris
-    const hourlyRate = parseFloat(document.querySelector('tr:nth-last-child(2) td.right.editable').textContent.replace(',', '.').trim() || "300");
-    const mileageRate = parseFloat(document.querySelector('tr:nth-last-child(2) td.right.editable:nth-child(14)').textContent.replace(',', '.').trim() || "27");
+    const hourlyRate = parseNumberValue(document.getElementById('hourlyRateCell').textContent) || 300;
+    const mileageRate = parseNumberValue(document.getElementById('mileageRateCell').textContent) || 27;
     
     // Beräkna totaler och uppdatera cellerna direkt
     // 1. Total för timmar (timmar * timpris)
     const totalHoursCost = Math.round(totalHours * hourlyRate);
-    document.getElementById('totalHours').textContent = totalHoursCost + " kr";
+    document.getElementById('totalHoursCost').textContent = totalHoursCost + " kr";
     
     // 2. Total för mil (mil * milkostnad)
     const totalMilesCost = (totalDistance * mileageRate).toFixed(2).replace('.', ',');
-    document.getElementById('totalMiles').textContent = totalMilesCost + " kr";
+    document.getElementById('totalMilesCost').textContent = totalMilesCost + " kr";
 }
 </script>
 </body>
