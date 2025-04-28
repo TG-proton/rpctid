@@ -114,7 +114,7 @@
 
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
     <script>
-        // API base URL - ändrad till absolut URL
+        // API base URL
         const API_BASE_URL = 'https://tid.endre.se';
         
         // Ladda bilder när sidan laddas
@@ -139,10 +139,36 @@
         // Ladda alla bilder från API:et
         async function loadPhotos() {
             try {
-                // Använd absolut URL för API-anrop
-                const response = await fetch(`${API_BASE_URL}/api/photos`);
+                // Förbättrad felhantering
+                const response = await fetch(`${API_BASE_URL}/api/photos`, {
+                    method: 'GET',
+                    headers: {
+                        'Accept': 'application/json'
+                    }
+                });
+                
+                // Kontrollera om svaret inte är OK
                 if (!response.ok) {
-                    throw new Error('Kunde inte hämta bilder');
+                    // Om servern returnerar något annat än 2xx
+                    if (response.status === 404) {
+                        throw new Error('API-endpointen finns inte');
+                    } else {
+                        const contentType = response.headers.get('content-type');
+                        if (contentType && contentType.includes('application/json')) {
+                            // Försök tolka JSON-fel
+                            const errorData = await response.json();
+                            throw new Error(errorData.message || `Server returnerade ${response.status}`);
+                        } else {
+                            // Om svaret inte är JSON
+                            throw new Error(`Server returnerade ${response.status}`);
+                        }
+                    }
+                }
+                
+                // Kontrollera att svaret är JSON
+                const contentType = response.headers.get('content-type');
+                if (!contentType || !contentType.includes('application/json')) {
+                    throw new Error('Servern returnerade inte JSON');
                 }
                 
                 const photos = await response.json();
@@ -159,19 +185,27 @@
             const photosList = document.getElementById('photosList');
             photosList.innerHTML = '';
             
-            if (photos.length === 0) {
-                photosList.innerHTML = '<p>Inga bilder har laddats upp ännu.</p>';
+            if (!Array.isArray(photos) || photos.length === 0) {
+                photosList.innerHTML = '<p>Inga bilder hittades.</p>';
                 return;
             }
             
             photos.forEach(photo => {
+                // Kontrollera att fotot har ett giltigt ID
+                if (!photo || !photo.id) {
+                    console.warn('Ogiltigt foto-objekt:', photo);
+                    return; // Skippa detta foto
+                }
+                
                 const photoCard = document.createElement('div');
                 photoCard.className = 'photo-card';
                 
                 const img = document.createElement('img');
-                // Använd absolut URL för bildkälla
                 img.src = `${API_BASE_URL}/api/photos/${photo.id}/image`;
                 img.alt = 'Foto';
+                img.onerror = function() {
+                    this.src = 'data:image/svg+xml;charset=UTF-8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%22200%22%20height%3D%22200%22%3E%3Crect%20fill%3D%22%23ddd%22%20width%3D%22200%22%20height%3D%22200%22%2F%3E%3Ctext%20fill%3D%22%23666%22%20font-family%3D%22Arial%22%20font-size%3D%2220%22%20x%3D%2250%22%20y%3D%22100%22%3EBild%20saknas%3C%2Ftext%3E%3C%2Fsvg%3E';
+                };
                 
                 const infoDiv = document.createElement('div');
                 infoDiv.className = 'photo-info';
@@ -210,35 +244,44 @@
             
             const validPositions = [];
             
-            photos.forEach(photo => {
-                if (photo.latitude && photo.longitude) {
-                    const marker = L.marker([photo.latitude, photo.longitude]).addTo(map);
-                    
-                    // Skapa popup med bild och info
-                    const popupContent = `
-                        <div style="text-align: center; max-width: 200px;">
-                            <img src="${API_BASE_URL}/api/photos/${photo.id}/image" style="max-width: 100%; max-height: 150px;">
-                            <p>${formatDate(photo.date_taken)}</p>
-                        </div>
-                    `;
-                    
-                    marker.bindPopup(popupContent);
-                    markers.push(marker);
-                    validPositions.push([photo.latitude, photo.longitude]);
-                }
-            });
+            if (Array.isArray(photos)) {
+                photos.forEach(photo => {
+                    // Validera att fotot har platsdata
+                    if (photo && photo.id && photo.latitude && photo.longitude) {
+                        const marker = L.marker([photo.latitude, photo.longitude]).addTo(map);
+                        
+                        // Skapa popup med bild och info
+                        const popupContent = `
+                            <div style="text-align: center; max-width: 200px;">
+                                <img src="${API_BASE_URL}/api/photos/${photo.id}/image" style="max-width: 100%; max-height: 150px;"
+                                     onerror="this.src='data:image/svg+xml;charset=UTF-8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%22200%22%20height%3D%22200%22%3E%3Crect%20fill%3D%22%23ddd%22%20width%3D%22200%22%20height%3D%22200%22%2F%3E%3Ctext%20fill%3D%22%23666%22%20font-family%3D%22Arial%22%20font-size%3D%2220%22%20x%3D%2250%22%20y%3D%22100%22%3EBild%20saknas%3C%2Ftext%3E%3C%2Fsvg%3E';">
+                                <p>${formatDate(photo.date_taken)}</p>
+                            </div>
+                        `;
+                        
+                        marker.bindPopup(popupContent);
+                        markers.push(marker);
+                        validPositions.push([photo.latitude, photo.longitude]);
+                    }
+                });
+            }
             
             // Justera kartvyn om det finns markörer
             if (validPositions.length > 0) {
-                const bounds = L.latLngBounds(validPositions);
-                map.fitBounds(bounds);
+                try {
+                    const bounds = L.latLngBounds(validPositions);
+                    map.fitBounds(bounds);
+                } catch (e) {
+                    console.error('Kunde inte anpassa kartan:', e);
+                    // Fallback till standardvyn
+                    map.setView([59.85, 17.63], 13);
+                }
             }
         }
 
         // Ladda upp en bild
         async function uploadImage() {
             const fileInput = document.getElementById('fileInput');
-            const statusEl = document.getElementById('uploadStatus');
             
             if (!fileInput.files || fileInput.files.length === 0) {
                 showStatus('uploadStatus', 'Välj en fil först', false);
@@ -252,15 +295,46 @@
             try {
                 showStatus('uploadStatus', 'Laddar upp...', true);
                 
-                // Använd absolut URL och korrekt endpoint för uppladdning
                 const response = await fetch(`${API_BASE_URL}/api/upload`, {
                     method: 'POST',
-                    body: formData
+                    body: formData,
+                    headers: {
+                        'Accept': 'application/json'
+                        // Observera att vi inte sätter 'Content-Type' med FormData
+                    }
                 });
                 
                 if (!response.ok) {
-                    const error = await response.json();
-                    throw new Error(error.message || 'Uppladdningsfel');
+                    let errorMsg = `Fel ${response.status}`;
+                    try {
+                        // Försök läsa felmeddelande om det finns
+                        const contentType = response.headers.get('content-type');
+                        if (contentType && contentType.includes('application/json')) {
+                            const errorData = await response.json();
+                            errorMsg = errorData.message || errorData.error || errorMsg;
+                        } else {
+                            // Om svaret inte är JSON, kan det vara en felsida
+                            const text = await response.text();
+                            // Visa bara korta meddelanden eller första raden
+                            errorMsg += ': ' + (text.length < 50 ? text : text.split('\n')[0] + '...');
+                        }
+                    } catch (e) {
+                        // Om vi inte kan tolka svaret
+                        errorMsg += ': Kunde inte läsa serversvaret';
+                    }
+                    throw new Error(errorMsg);
+                }
+                
+                // Kontrollera om svaret är JSON
+                const contentType = response.headers.get('content-type');
+                let result;
+                
+                if (contentType && contentType.includes('application/json')) {
+                    result = await response.json();
+                } else {
+                    // Om svaret inte är JSON
+                    const text = await response.text();
+                    result = { message: text.length < 50 ? text : 'Uppladdning lyckades' };
                 }
                 
                 showStatus('uploadStatus', 'Bilden har laddats upp!', true);
@@ -276,18 +350,36 @@
 
         // Ta bort en bild
         async function deletePhoto(id) {
+            // Kontrollera att vi har ett giltigt ID
+            if (!id) {
+                console.error('Försöker ta bort bild utan ID');
+                showStatus('uploadStatus', 'Fel: Inget bild-ID angivet', false);
+                return;
+            }
+            
             if (!confirm('Är du säker på att du vill ta bort denna bild?')) {
                 return;
             }
             
             try {
-                // Använd absolut URL för borttagning
                 const response = await fetch(`${API_BASE_URL}/api/photos/${id}`, {
-                    method: 'DELETE'
+                    method: 'DELETE',
+                    headers: {
+                        'Accept': 'application/json'
+                    }
                 });
                 
                 if (!response.ok) {
-                    throw new Error('Kunde inte ta bort bilden');
+                    let errorMsg = `Fel ${response.status}`;
+                    try {
+                        // Försök läsa felmeddelande om det finns
+                        const contentType = response.headers.get('content-type');
+                        if (contentType && contentType.includes('application/json')) {
+                            const errorData = await response.json();
+                            errorMsg = errorData.message || errorData.error || errorMsg;
+                        }
+                    } catch (e) {}
+                    throw new Error(errorMsg);
                 }
                 
                 showStatus('uploadStatus', 'Bilden har tagits bort', true);
@@ -301,8 +393,17 @@
         // Format date nicely
         function formatDate(dateString) {
             if (!dateString) return 'Okänt datum';
-            const date = new Date(dateString);
-            return date.toLocaleDateString('sv-SE');
+            
+            try {
+                const date = new Date(dateString);
+                // Kontrollera om datumet är giltigt
+                if (isNaN(date.getTime())) {
+                    return 'Ogiltigt datum';
+                }
+                return date.toLocaleDateString('sv-SE');
+            } catch (e) {
+                return 'Ogiltigt datum';
+            }
         }
 
         // Show status message
