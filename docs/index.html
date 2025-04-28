@@ -72,17 +72,20 @@
                         .bindPopup('Lat: ' + photo[1] + '<br>Lon: ' + photo[2] + '<br>Datum: ' + photo[3]);
                     markers.push(marker);
 
+                    // Skapa kompletta URL:er för bilderna
+                    const imageUrl = `https://tid.endre.se/uploads/${photo[0]}`;
+                    
                     // Lägg till rad i tabellen
                     var row = document.createElement('tr');
                     row.innerHTML = `
                         <td>
-                            <img src="/uploads/${photo[0]}" onclick="window.open('/uploads/${photo[0]}');">
+                            <img src="${imageUrl}" onclick="window.open('${imageUrl}');">
                         </td>
                         <td>${photo[0]}</td>
                         <td>${photo[1]} ${photo[2]}</td>
                         <td>${photo[3]}</td>
                         <td>
-                            <input type="text" placeholder="Anteckningar" value="${photo[4]}" onchange="updateNotes('${photo[0]}', this.value)">
+                            <input type="text" placeholder="Anteckningar" value="${photo[4] || ''}" disabled>
                         </td>
                     `;
                     tableBody.appendChild(row);
@@ -96,23 +99,12 @@
             })
             .catch(error => {
                 console.error('Fel vid hämtning av data:', error);
+                document.getElementById('uploaded-photos').innerHTML = `
+                    <tr>
+                        <td colspan="5">Det gick inte att hämta data: ${error.message}</td>
+                    </tr>
+                `;
             });
-
-        // Funktion för att uppdatera anteckningar
-        function updateNotes(filename, notes) {
-            fetch('/update_notes/' + filename, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/x-www-form-urlencoded',
-                },
-                body: new URLSearchParams({ 'notes': notes })
-            })
-            .then(response => {
-                if (!response.ok) {
-                    alert('Fel vid uppdatering av anteckningar.');
-                }
-            });
-        }
     </script>
 </body>
 </html>
