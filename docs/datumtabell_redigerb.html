@@ -23,11 +23,7 @@ td, th {
     vertical-align: bottom;
 }
 
-td:empty {
-    border: none;
-}
-
-.noborder {
+td.noborder, td:empty.noborder, th.noborder {
     border: none;
 }
 
@@ -263,12 +259,12 @@ td.editable:focus {
         <td class="noborder"></td>
         <td class="left noborder bold">Totalt</td>
         <td class="noborder"></td>
-        <td class="right bold currency" colspan="3">700</td>
+        <td class="right bold currency" colspan="3" id="totalHours">700</td>
         <td class="noborder"></td>
         <td class="noborder"></td>
         <td class="noborder"></td>
         <td class="center bold">Totalt</td>
-        <td class="right bold currency" colspan="2">54,00</td>
+        <td class="right bold currency" colspan="2" id="totalMiles">54,00</td>
         <td class="noborder"></td>
     </tr>
 </table>
@@ -334,6 +330,9 @@ document.addEventListener('DOMContentLoaded', function() {
     document.querySelectorAll('td.editable').forEach(cell => {
         cell.addEventListener('input', calculateSums);
     });
+    
+    // Initial beräkning när sidan laddas
+    calculateSums();
 });
 
 // Beräkna summor baserat på inmatade värden
@@ -371,17 +370,17 @@ function calculateSums() {
     }
     
     // Hämta timpris och mil-pris
-    const hourlyRate = parseFloat(document.querySelector('tr:nth-last-child(2) td.right.editable').textContent.trim());
-    const mileageRate = parseFloat(document.querySelector('tr:nth-last-child(2) td.right.editable:nth-child(14)').textContent.trim());
+    const hourlyRate = parseFloat(document.querySelector('tr:nth-last-child(2) td.right.editable').textContent.replace(',', '.').trim() || "300");
+    const mileageRate = parseFloat(document.querySelector('tr:nth-last-child(2) td.right.editable:nth-child(14)').textContent.replace(',', '.').trim() || "27");
     
-    // Beräkna totaler
-    if (!isNaN(hourlyRate) && !isNaN(totalHours)) {
-        document.querySelector('tr:last-child td.right.bold.currency').textContent = Math.round(totalHours * hourlyRate);
-    }
+    // Beräkna totaler och uppdatera cellerna direkt
+    // 1. Total för timmar (timmar * timpris)
+    const totalHoursCost = Math.round(totalHours * hourlyRate);
+    document.getElementById('totalHours').textContent = totalHoursCost;
     
-    if (!isNaN(mileageRate) && !isNaN(totalDistance)) {
-        document.querySelector('tr:last-child td.right.bold.currency:last-of-type').textContent = (totalDistance * mileageRate).toFixed(2).replace('.', ',');
-    }
+    // 2. Total för mil (mil * milkostnad)
+    const totalMilesCost = (totalDistance * mileageRate).toFixed(2).replace('.', ',');
+    document.getElementById('totalMiles').textContent = totalMilesCost;
 }
 </script>
 </body>
